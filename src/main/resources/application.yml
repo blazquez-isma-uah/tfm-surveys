@@ -1,0 +1,53 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: surveys
+  datasource:
+    url: jdbc:mysql://localhost:3307/tfm_surveys?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: tfm_surveys_rw
+    password: tfm_surveys_password
+  jpa:
+    hibernate:
+      ddl-auto: update  # Usar 'create' si quieres que borre y rehaga todo en cada arranque
+        # Usar 'update' para que actualice el esquema sin perder datos
+      # Usar 'validate' para validar el esquema sin hacer cambios
+      # Usar 'none' para no hacer nada con el esquema
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          time_zone: UTC
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/tfm-bandas
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+
+logging:
+  level:
+    org.hibernate.SQL: off
+    org.springframework.security: DEBUG
+    org.springframework.security.oauth2: DEBUG
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
