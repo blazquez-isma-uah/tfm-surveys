@@ -14,10 +14,10 @@ import java.util.UUID;
 @AllArgsConstructor
 @Entity
 @Table(name = "survey_response",
-  uniqueConstraints = @UniqueConstraint(name = "uk_response_survey_user", columnNames = {"survey_id","user_id"}),
+  uniqueConstraints = @UniqueConstraint(name = "uk_response_survey_user", columnNames = {"survey_id","user_iam_id"}),
   indexes = {
     @Index(name = "idx_response_survey", columnList = "survey_id"),
-    @Index(name = "idx_response_user", columnList = "user_id")
+    @Index(name = "idx_response_user", columnList = "user_iam_id")
 })
 public class SurveyResponseEntity {
   @Id

@@ -22,7 +22,7 @@ import java.util.UUID;
 public class SurveyEntity {
   @Id
   @Column(name = "id", nullable = false, updatable = false)
-  private String id; // UUID as String
+  private String id;
 
   @Column(name = "event_id", nullable = false)
   private String eventId;
@@ -48,7 +48,7 @@ public class SurveyEntity {
   private Instant closesAt;
 
   @Column(name = "created_by", nullable = false)
-  private UUID createdBy;
+  private String createdBy;
 
   @Column(name = "created_at", nullable = false)
   private Instant createdAt;
