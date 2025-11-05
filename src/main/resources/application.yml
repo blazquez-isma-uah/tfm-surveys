@@ -28,6 +28,14 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: http://localhost:8080/realms/tfm-bandas
+  cloud:
+    openfeign:
+      client:
+        config:
+          eventsClient:
+            connect-timeout: 2000
+            read-timeout: 2000
+            logger-level: basic
 
 management:
   endpoints:
@@ -51,3 +59,9 @@ springdoc:
     path: /swagger-ui.html
   api-docs:
     path: /v3/api-docs
+
+
+events:
+  service:
+    uri: http://localhost:8083
+    exists-path: /api/events/{eventId}

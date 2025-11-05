@@ -27,6 +27,14 @@ spring:
         jwt:
           # En Docker usamos JWKS explícito (no issuer-uri) para evitar problemas de hostname
           jwk-set-uri: ${SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI}
+  cloud:
+    openfeign:
+      client:
+        config:
+          eventsClient:
+            connect-timeout: 2000
+            read-timeout: 2000
+            logger-level: basic
 
 springdoc:
   swagger-ui:
@@ -50,3 +58,8 @@ logging:
     org.hibernate.SQL: off
     org.springframework.security: DEBUG
     org.springframework.security.oauth2: DEBUG
+
+events:
+  service:
+    uri: ${EVENTS_SERVICE_URI}
+    exists-path: ${EVENTS_SERVICE_EXISTS_PATH}

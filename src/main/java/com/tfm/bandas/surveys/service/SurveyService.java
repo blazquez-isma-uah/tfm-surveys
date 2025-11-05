@@ -11,10 +11,11 @@ import java.util.Map;
 
 public interface SurveyService {
   SurveyDTO createSurvey(CreateSurveyRequestDTO survey, String userCreatorId);
-  SurveyDTO getSurveyById(String id);
-  void deleteSurvey(String id);
-  SurveyDTO openSurvey(String id);
-  SurveyDTO closeSurvey(String id);   // cierra
+  SurveyDTO getSurveyById(String suveyId);
+  void deleteSurvey(String suveyId);
+  SurveyDTO openSurvey(String suveyId);
+  SurveyDTO closeSurvey(String suveyId);
+  SurveyDTO cancelSurvey(String suveyId);
   List<SurveyDTO> listOpenSurveysForEvent(String eventId);
   List<SurveyDTO> listAllSurveysForEvent(String eventId);
   SurveyResponseDTO respondYesNoMaybeToSurvey(String surveyId, String userId, RespondYesNoMaybeRequestDTO answer);

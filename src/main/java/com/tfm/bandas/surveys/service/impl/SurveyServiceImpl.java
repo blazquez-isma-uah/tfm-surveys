@@ -1,5 +1,6 @@
 package com.tfm.bandas.surveys.service.impl;
 
+import com.tfm.bandas.surveys.client.EventsClient;
 import com.tfm.bandas.surveys.dto.CreateSurveyRequestDTO;
 import com.tfm.bandas.surveys.dto.RespondYesNoMaybeRequestDTO;
 import com.tfm.bandas.surveys.dto.SurveyDTO;
@@ -31,13 +32,20 @@ public class SurveyServiceImpl implements SurveyService {
 
     private final SurveyRepository surveyRepository;
     private final SurveyResponseRepository surveyResponseRepository;
+    private final EventsClient eventsClient;
 
     @Override
     @Transactional
     public SurveyDTO createSurvey(CreateSurveyRequestDTO survey, String userCreatorId) {
         // Validar fechas
-        if (survey.opensAt() != null && survey.closesAt() != null && survey.opensAt().isAfter(survey.closesAt()))
+        if (survey.opensAt() != null && survey.closesAt() != null && survey.opensAt().isAfter(survey.closesAt())) {
             throw new IllegalArgumentException("opensAt must be <= closesAt");
+        }
+
+        // Validar que el eventId existe llamando al cliente de eventos
+        if (!eventsClient.existsEventById(survey.eventId())) {
+            throw new IllegalArgumentException("eventId not found: " + survey.eventId());
+        }
 
         SurveyEntity entity = SurveyMapper.toEntity(survey);
         entity.setCreatedBy(userCreatorId);
@@ -46,15 +54,15 @@ public class SurveyServiceImpl implements SurveyService {
 
     @Override
     @Transactional(readOnly = true)
-    public SurveyDTO getSurveyById(String surveyId) {
-        SurveyEntity survey = surveyRepository.findById(surveyId).orElseThrow();
+    public SurveyDTO getSurveyById(String suveyId) {
+        SurveyEntity survey = surveyRepository.findById(suveyId).orElseThrow();
         return SurveyMapper.toDto(survey);
     }
 
     @Override
     @Transactional
-    public void deleteSurvey(String surveyId) {
-        SurveyEntity survey = surveyRepository.findById(surveyId).orElseThrow();
+    public void deleteSurvey(String suveyId) {
+        SurveyEntity survey = surveyRepository.findById(suveyId).orElseThrow();
         if (survey.getStatus() == SurveyStatus.OPEN)
             throw new IllegalStateException("Cannot delete an OPEN survey");
         surveyRepository.delete(survey);
@@ -62,19 +70,29 @@ public class SurveyServiceImpl implements SurveyService {
 
     @Override
     @Transactional
-    public SurveyDTO openSurvey(String surveyId) {
-        SurveyEntity survey = surveyRepository.findById(surveyId).orElseThrow();
-        if (survey.getStatus() != SurveyStatus.DRAFT) throw new IllegalStateException("Only DRAFT → OPEN");
+    public SurveyDTO openSurvey(String suveyId) {
+        SurveyEntity survey = surveyRepository.findById(suveyId).orElseThrow();
+        // Si ya está abierto, no hacer nada, para otros estados, abrirlo
+        if (survey.getStatus() == SurveyStatus.OPEN) return SurveyMapper.toDto(survey);
         survey.setStatus(SurveyStatus.OPEN);
         return SurveyMapper.toDto(surveyRepository.save(survey));
     }
 
     @Override
     @Transactional
-    public SurveyDTO closeSurvey(String surveyId) {
-        SurveyEntity survey = surveyRepository.findById(surveyId).orElseThrow();
+    public SurveyDTO closeSurvey(String suveyId) {
+        SurveyEntity survey = surveyRepository.findById(suveyId).orElseThrow();
         if (survey.getStatus() == SurveyStatus.CLOSED || survey.getStatus() == SurveyStatus.CANCELLED) return SurveyMapper.toDto(survey);
         survey.setStatus(SurveyStatus.CLOSED);
+        return SurveyMapper.toDto(surveyRepository.save(survey));
+    }
+
+    @Override
+    @Transactional
+    public SurveyDTO cancelSurvey(String suveyId) {
+        SurveyEntity survey = surveyRepository.findById(suveyId).orElseThrow();
+        if (survey.getStatus() == SurveyStatus.CANCELLED) return SurveyMapper.toDto(survey);
+        survey.setStatus(SurveyStatus.CANCELLED);
         return SurveyMapper.toDto(surveyRepository.save(survey));
     }
 

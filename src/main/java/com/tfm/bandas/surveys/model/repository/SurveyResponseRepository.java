@@ -16,4 +16,8 @@ public interface SurveyResponseRepository extends JpaRepository<SurveyResponseEn
 
   @Query("select r from SurveyResponseEntity r where r.surveyId = :surveyId")
   List<SurveyResponseEntity> findBySurveyId(@Param("surveyId") String surveyId);
+
+  @Query("select r from SurveyResponseEntity r where r.surveyId = :surveyId and r.userIamId = :userId")
+  Optional<SurveyResponseEntity> findMyResponse(@Param("surveyId") String surveyId, @Param("userId") String userId);
+
 }

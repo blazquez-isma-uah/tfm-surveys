@@ -71,6 +71,15 @@ public class SurveyController {
         return response;
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/{surveyId}/cancel")
+    public SurveyDTO cancelSurvey(@PathVariable String surveyId) {
+        logger.info("Calling cancelSurvey with surveyId={}", surveyId);
+        SurveyDTO response = surveyService.cancelSurvey(surveyId);
+        logger.info("cancelSurvey Completed successfully for survey={}", response);
+        return response;
+    }
+
     @PreAuthorize("hasAnyRole('ADMIN', 'MUSICIAN')")
     @GetMapping("/listOpen/{eventId}")
     public List<SurveyDTO> listOpenSurveyByEventId(@PathVariable String eventId) {
