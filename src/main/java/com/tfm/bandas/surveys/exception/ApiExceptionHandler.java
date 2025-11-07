@@ -4,6 +4,7 @@ import feign.FeignException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -85,4 +86,24 @@ public class ApiExceptionHandler {
   public Map<String, Object> handleGeneric(Exception ex) {
     return Map.of("error", "Internal Error", "message", ex.getMessage());
   }
+
+  // ... en tu GlobalExceptionHandler
+  @ExceptionHandler(PreconditionRequiredException.class)
+  @ResponseStatus(HttpStatus.PRECONDITION_REQUIRED) // 428
+  public Map<String, Object> handlePreconditionRequired(RuntimeException ex) {
+    return Map.of("error", "Precondition Required", "message", ex.getMessage());
+  }
+
+  @ExceptionHandler(PreconditionFailedException.class)
+  @ResponseStatus(HttpStatus.PRECONDITION_FAILED) // 412
+  public Map<String, Object> handlePreconditionFailed(RuntimeException ex) {
+    return Map.of("error", "Precondition Failed", "message", ex.getMessage());
+  }
+
+  @ExceptionHandler(OptimisticLockingFailureException.class)
+  @ResponseStatus(HttpStatus.CONFLICT) // 409
+  public Map<String, Object> handleOptimisticLock(OptimisticLockingFailureException ex) {
+    return Map.of("error", "Optimistic Lock", "message", "Concurrent update detected");
+  }
+
 }

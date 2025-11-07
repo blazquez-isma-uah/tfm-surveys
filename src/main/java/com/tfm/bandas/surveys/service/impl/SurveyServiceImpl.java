@@ -1,29 +1,22 @@
 package com.tfm.bandas.surveys.service.impl;
 
 import com.tfm.bandas.surveys.client.EventsClient;
-import com.tfm.bandas.surveys.dto.CreateSurveyRequestDTO;
-import com.tfm.bandas.surveys.dto.RespondYesNoMaybeRequestDTO;
-import com.tfm.bandas.surveys.dto.SurveyDTO;
-import com.tfm.bandas.surveys.dto.SurveyResponseDTO;
+import com.tfm.bandas.surveys.dto.*;
 import com.tfm.bandas.surveys.dto.mapper.SurveyMapper;
-import com.tfm.bandas.surveys.dto.mapper.SurveyResponseMapper;
+import com.tfm.bandas.surveys.exception.PreconditionFailedException;
 import com.tfm.bandas.surveys.model.entity.SurveyEntity;
-import com.tfm.bandas.surveys.model.entity.SurveyResponseEntity;
 import com.tfm.bandas.surveys.model.repository.SurveyRepository;
-import com.tfm.bandas.surveys.model.repository.SurveyResponseRepository;
+import com.tfm.bandas.surveys.model.specification.SurveySpecifications;
 import com.tfm.bandas.surveys.service.SurveyService;
-import com.tfm.bandas.surveys.utils.ResponseType;
 import com.tfm.bandas.surveys.utils.SurveyStatus;
-import com.tfm.bandas.surveys.utils.YesNoMaybeAnswer;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.EnumMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -31,7 +24,6 @@ import java.util.stream.Collectors;
 public class SurveyServiceImpl implements SurveyService {
 
     private final SurveyRepository surveyRepository;
-    private final SurveyResponseRepository surveyResponseRepository;
     private final EventsClient eventsClient;
 
     @Override
@@ -69,6 +61,35 @@ public class SurveyServiceImpl implements SurveyService {
     }
 
     @Override
+    public SurveyDTO updateSurvey(String surveyId, int ifMatchVersion, UpdateSurveyRequestDTO survey) {
+        survey.validateWindow();
+
+        SurveyEntity e = surveyRepository.findById(surveyId)
+                .orElseThrow(() -> new java.util.NoSuchElementException("Survey not found: " + surveyId));
+
+        // If-Match contra @Version
+        if (e.getVersion() != ifMatchVersion) {
+            throw new PreconditionFailedException("ETag mismatch. Current version is " + e.getVersion());
+        }
+
+        // Reglas por estado
+        switch (e.getStatus()) {
+            case DRAFT -> applyPutDraft(e, survey);
+            case OPEN  -> applyPutOpen(e, survey);
+            default    -> throw new IllegalStateException("Survey in " + e.getStatus() + " cannot be modified");
+        }
+
+        // Validación final de ventana
+        Instant o = e.getOpensAt(), c = e.getClosesAt();
+        if (o != null && c != null && o.isAfter(c)) {
+            throw new IllegalArgumentException("opensAt must be <= closesAt");
+        }
+
+        SurveyEntity saved = surveyRepository.saveAndFlush(e);
+        return SurveyMapper.toDto(saved);
+    }
+
+    @Override
     @Transactional
     public SurveyDTO openSurvey(String suveyId) {
         SurveyEntity survey = surveyRepository.findById(suveyId).orElseThrow();
@@ -98,59 +119,60 @@ public class SurveyServiceImpl implements SurveyService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<SurveyDTO> listAllSurveysForEvent(String eventId) {
-        return surveyRepository.findByEventId(eventId).stream()
-                .map(SurveyMapper::toDto)
-                .collect(Collectors.toList());
+    public Page<SurveyDTO> listAllSurveysForEvent(String eventId, Pageable pageable) {
+        return surveyRepository.findByEventId(eventId, pageable)
+                .map(SurveyMapper::toDto);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<SurveyDTO> listOpenSurveysForEvent(String eventId) {
-        return surveyRepository.findOpenSurveysOfEvent(eventId, Instant.now())
-                .stream().map(SurveyMapper::toDto).collect(Collectors.toList());
+    public Page<SurveyDTO> listOpenSurveysForEvent(String eventId, Pageable pageable) {
+        return surveyRepository.findOpenSurveysOfEvent(eventId, Instant.now(), pageable)
+                .map(SurveyMapper::toDto);
     }
 
     @Override
-    @Transactional
-    public SurveyResponseDTO respondYesNoMaybeToSurvey(String surveyId, String userId, RespondYesNoMaybeRequestDTO answer) {
-        SurveyEntity survey = surveyRepository.findById(surveyId).orElseThrow();
-        Instant now = Instant.now();
-        if (survey.getStatus() != SurveyStatus.OPEN ||
-            (survey.getOpensAt() != null && survey.getOpensAt().isAfter(now)) ||
-            (survey.getClosesAt() != null && survey.getClosesAt().isBefore(now))) {
-            throw new IllegalStateException("Survey is not open for responses");
-        }
-        SurveyResponseEntity response = surveyResponseRepository.findBySurveyIdAndUserIamId(surveyId, userId)
-            .orElseGet(SurveyResponseEntity::new);
-        response.setSurveyId(surveyId);
-        response.setUserIamId(userId);
-        response.setAnswerYesNoMaybe(answer.answer());
-        response.setComment(answer.comment());
-        return SurveyResponseMapper.toDto(surveyResponseRepository.save(response)); // upsert - si no existe lo crea y si existe lo actualiza
+    public Page<SurveyDTO> searchSurveys(
+            String qText, String title, String description, String eventId, SurveyStatus status,
+            Instant opensFrom, Instant opensTo, Instant closesFrom, Instant closesTo,
+            Pageable pageable) {
+
+        Specification<SurveyEntity> spec = Specification.anyOf(
+                SurveySpecifications.all(),
+                SurveySpecifications.text(qText),
+                SurveySpecifications.titleContains(title),
+                SurveySpecifications.descriptionContains(description),
+                SurveySpecifications.eventIdEquals(eventId),
+                SurveySpecifications.statusEquals(status),
+                SurveySpecifications.opensAtFrom(opensFrom),
+                SurveySpecifications.opensAtTo(opensTo),
+                SurveySpecifications.closesAtFrom(closesFrom),
+                SurveySpecifications.closesAtTo(closesTo));
+
+        return surveyRepository.findAll(spec, pageable).map(SurveyMapper::toDto); // usa tu mapper
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public Map<YesNoMaybeAnswer, Long> resultsYesNoMaybeOfSurvey(String surveyId) {
-        SurveyEntity survey = surveyRepository.findById(surveyId).orElseThrow();
-        if (survey.getResponseType() != ResponseType.YES_NO_MAYBE) {
-            throw new IllegalStateException("Survey response type is not YES_NO_MAYBE");
-        }
-        Map<YesNoMaybeAnswer, Long> answers = new EnumMap<>(YesNoMaybeAnswer.class);
-        for (YesNoMaybeAnswer y : YesNoMaybeAnswer.values()) {
-            Long count = surveyResponseRepository.countBySurveyIdAndAnswerYesNoMaybe(surveyId, y);
-            answers.put(y, count);
-        }
-        return answers;
+
+    private void applyPutDraft(SurveyEntity e, UpdateSurveyRequestDTO dto) {
+        e.setTitle(dto.title());
+        e.setDescription(dto.description());
+        e.setOpensAt(dto.opensAt());
+        e.setClosesAt(dto.closesAt());
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<SurveyResponseDTO> completeResultsOfSurvey(String surveyId) {
-        List<SurveyResponseEntity> responses = surveyResponseRepository.findBySurveyId(surveyId);
-        return responses.stream()
-                .map(SurveyResponseMapper::toDto)
-                .collect(Collectors.toList());
+    private void applyPutOpen(SurveyEntity e, UpdateSurveyRequestDTO dto) {
+        e.setTitle(dto.title());
+        e.setDescription(dto.description());
+
+        // opensAt no se puede modificar en OPEN
+        if (!dto.opensAt().equals(e.getOpensAt())) {
+            throw new IllegalArgumentException("Cannot modify opensAt while survey is OPEN");
+        }
+
+        // closesAt obligatorio y solo se puede mantener o AMPLIAR
+        if (dto.closesAt().isBefore(e.getClosesAt())) {
+            throw new IllegalArgumentException("Cannot shorten closesAt while survey is OPEN");
+        }
+        e.setClosesAt(dto.closesAt());
     }
 }

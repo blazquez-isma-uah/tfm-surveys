@@ -56,6 +56,10 @@ public class SurveyEntity {
   @Column(name = "updated_at", nullable = false)
   private Instant updatedAt;
 
+  @Version
+  @Column(name = "version")
+  private Integer version;
+
   @PrePersist
   void prePersist() {
     if (id == null) id = UUID.randomUUID().toString();

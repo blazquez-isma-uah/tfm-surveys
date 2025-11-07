@@ -7,6 +7,7 @@ import java.time.Instant;
 
 public record SurveyDTO(
   String id,
+  Integer version,
   String eventId,
   String title,
   String description,

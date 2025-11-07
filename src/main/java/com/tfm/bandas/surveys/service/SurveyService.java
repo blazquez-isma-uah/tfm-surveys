@@ -1,24 +1,32 @@
 package com.tfm.bandas.surveys.service;
 
-import com.tfm.bandas.surveys.dto.CreateSurveyRequestDTO;
-import com.tfm.bandas.surveys.dto.RespondYesNoMaybeRequestDTO;
-import com.tfm.bandas.surveys.dto.SurveyDTO;
-import com.tfm.bandas.surveys.dto.SurveyResponseDTO;
+import com.tfm.bandas.surveys.dto.*;
+import com.tfm.bandas.surveys.utils.SurveyStatus;
 import com.tfm.bandas.surveys.utils.YesNoMaybeAnswer;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
-import java.util.List;
 import java.util.Map;
 
 public interface SurveyService {
   SurveyDTO createSurvey(CreateSurveyRequestDTO survey, String userCreatorId);
   SurveyDTO getSurveyById(String suveyId);
   void deleteSurvey(String suveyId);
+  SurveyDTO updateSurvey(String suveyId, int ifMatchVersion, UpdateSurveyRequestDTO survey);
   SurveyDTO openSurvey(String suveyId);
   SurveyDTO closeSurvey(String suveyId);
   SurveyDTO cancelSurvey(String suveyId);
-  List<SurveyDTO> listOpenSurveysForEvent(String eventId);
-  List<SurveyDTO> listAllSurveysForEvent(String eventId);
-  SurveyResponseDTO respondYesNoMaybeToSurvey(String surveyId, String userId, RespondYesNoMaybeRequestDTO answer);
-  Map<YesNoMaybeAnswer, Long> resultsYesNoMaybeOfSurvey(String surveyId);
-  List<SurveyResponseDTO> completeResultsOfSurvey(String surveyId);
+  Page<SurveyDTO> listOpenSurveysForEvent(String eventId, Pageable pageable);
+  Page<SurveyDTO> listAllSurveysForEvent(String eventId, Pageable pageable);
+  Page<SurveyDTO> searchSurveys(
+          String qText,
+          String title,
+          String description,
+          String eventId,
+          SurveyStatus status,
+          java.time.Instant opensFrom,
+          java.time.Instant opensTo,
+          java.time.Instant closesFrom,
+          java.time.Instant closesTo,
+          Pageable pageable);
 }

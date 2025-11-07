@@ -10,6 +10,7 @@ public final class SurveyResponseMapper {
     if (entity == null) return null;
     return new SurveyResponseDTO(
       entity.getId(),
+      entity.getVersion(),
       entity.getSurveyId(),
       entity.getUserIamId(),
       entity.getAnswerYesNoMaybe(),
@@ -22,6 +23,7 @@ public final class SurveyResponseMapper {
     if (dto == null) return null;
     return SurveyResponseEntity.builder()
       .id(dto.id())
+      .version(dto.version())
       .surveyId(dto.surveyId())
       .userIamId(dto.userIamId())
       .answerYesNoMaybe(dto.answerYesNoMaybe())

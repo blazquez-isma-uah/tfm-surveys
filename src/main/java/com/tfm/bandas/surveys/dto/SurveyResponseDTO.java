@@ -6,6 +6,7 @@ import java.time.Instant;
 
 public record SurveyResponseDTO(
   String id,
+  Integer version,
   String surveyId,
   String userIamId,
   YesNoMaybeAnswer answerYesNoMaybe,
