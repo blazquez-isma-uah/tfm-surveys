@@ -148,7 +148,7 @@ public class SurveyController {
 
 
     @PreAuthorize("hasAnyRole('ADMIN', 'MUSICIAN')")
-    @PostMapping("responses/{surveyId}")
+    @PostMapping("/responses/{surveyId}")
     public ResponseEntity<SurveyResponseDTO> respondToSurvey(@AuthenticationPrincipal Jwt jwt
             , @PathVariable String surveyId,@Valid @RequestBody RespondYesNoMaybeRequestDTO respondYesNoMaybeRequestDTO) {
         logger.info("Calling respondToSurvey with surveyId={}, respondYesNoMaybeRequestDTO={}", surveyId, respondYesNoMaybeRequestDTO);
