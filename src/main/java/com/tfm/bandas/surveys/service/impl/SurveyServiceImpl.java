@@ -41,7 +41,7 @@ public class SurveyServiceImpl implements SurveyService {
 
         SurveyEntity entity = SurveyMapper.toEntity(survey);
         entity.setCreatedBy(userCreatorId);
-        return SurveyMapper.toDto(surveyRepository.save(entity));
+        return SurveyMapper.toDto(surveyRepository.saveAndFlush(entity));
     }
 
     @Override
@@ -53,8 +53,12 @@ public class SurveyServiceImpl implements SurveyService {
 
     @Override
     @Transactional
-    public void deleteSurvey(String suveyId) {
+    public void deleteSurvey(String suveyId, int ifMatchVersion) {
         SurveyEntity survey = surveyRepository.findById(suveyId).orElseThrow();
+        // If-Match contra @Version
+        if (survey.getVersion() != ifMatchVersion) {
+            throw new PreconditionFailedException("ETag mismatch. Current version is " + survey.getVersion());
+        }
         if (survey.getStatus() == SurveyStatus.OPEN)
             throw new IllegalStateException("Cannot delete an OPEN survey");
         surveyRepository.delete(survey);
@@ -64,57 +68,68 @@ public class SurveyServiceImpl implements SurveyService {
     public SurveyDTO updateSurvey(String surveyId, int ifMatchVersion, UpdateSurveyRequestDTO survey) {
         survey.validateWindow();
 
-        SurveyEntity e = surveyRepository.findById(surveyId)
+        SurveyEntity surveyEntity = surveyRepository.findById(surveyId)
                 .orElseThrow(() -> new java.util.NoSuchElementException("Survey not found: " + surveyId));
 
         // If-Match contra @Version
-        if (e.getVersion() != ifMatchVersion) {
-            throw new PreconditionFailedException("ETag mismatch. Current version is " + e.getVersion());
+        if (surveyEntity.getVersion() != ifMatchVersion) {
+            throw new PreconditionFailedException("ETag mismatch. Current version is " + surveyEntity.getVersion());
         }
 
         // Reglas por estado
-        switch (e.getStatus()) {
-            case DRAFT -> applyPutDraft(e, survey);
-            case OPEN  -> applyPutOpen(e, survey);
-            default    -> throw new IllegalStateException("Survey in " + e.getStatus() + " cannot be modified");
+        switch (surveyEntity.getStatus()) {
+            case DRAFT -> applyPutDraft(surveyEntity, survey);
+            case OPEN  -> applyPutOpen(surveyEntity, survey);
+            default    -> throw new IllegalStateException("Survey in " + surveyEntity.getStatus() + " cannot be modified");
         }
 
         // Validación final de ventana
-        Instant o = e.getOpensAt(), c = e.getClosesAt();
+        Instant o = surveyEntity.getOpensAt(), c = surveyEntity.getClosesAt();
         if (o != null && c != null && o.isAfter(c)) {
             throw new IllegalArgumentException("opensAt must be <= closesAt");
         }
 
-        SurveyEntity saved = surveyRepository.saveAndFlush(e);
+        SurveyEntity saved = surveyRepository.saveAndFlush(surveyEntity);
         return SurveyMapper.toDto(saved);
     }
 
     @Override
     @Transactional
-    public SurveyDTO openSurvey(String suveyId) {
+    public SurveyDTO openSurvey(String suveyId, int ifMatchVersion) {
         SurveyEntity survey = surveyRepository.findById(suveyId).orElseThrow();
+        if (survey.getVersion() != ifMatchVersion) {
+            throw new PreconditionFailedException("ETag mismatch. Current version is " + survey.getVersion());
+        }
         // Si ya está abierto, no hacer nada, para otros estados, abrirlo
         if (survey.getStatus() == SurveyStatus.OPEN) return SurveyMapper.toDto(survey);
         survey.setStatus(SurveyStatus.OPEN);
-        return SurveyMapper.toDto(surveyRepository.save(survey));
+        return SurveyMapper.toDto(surveyRepository.saveAndFlush(survey));
     }
 
     @Override
     @Transactional
-    public SurveyDTO closeSurvey(String suveyId) {
+    public SurveyDTO closeSurvey(String suveyId, int ifMatchVersion) {
         SurveyEntity survey = surveyRepository.findById(suveyId).orElseThrow();
+        // If-Match contra @Version
+        if (survey.getVersion() != ifMatchVersion) {
+            throw new PreconditionFailedException("ETag mismatch. Current version is " + survey.getVersion());
+        }
         if (survey.getStatus() == SurveyStatus.CLOSED || survey.getStatus() == SurveyStatus.CANCELLED) return SurveyMapper.toDto(survey);
         survey.setStatus(SurveyStatus.CLOSED);
-        return SurveyMapper.toDto(surveyRepository.save(survey));
+        return SurveyMapper.toDto(surveyRepository.saveAndFlush(survey));
     }
 
     @Override
     @Transactional
-    public SurveyDTO cancelSurvey(String suveyId) {
+    public SurveyDTO cancelSurvey(String suveyId, int ifMatchVersion) {
         SurveyEntity survey = surveyRepository.findById(suveyId).orElseThrow();
+        // If-Match contra @Version
+        if (survey.getVersion() != ifMatchVersion) {
+            throw new PreconditionFailedException("ETag mismatch. Current version is " + survey.getVersion());
+        }
         if (survey.getStatus() == SurveyStatus.CANCELLED) return SurveyMapper.toDto(survey);
         survey.setStatus(SurveyStatus.CANCELLED);
-        return SurveyMapper.toDto(surveyRepository.save(survey));
+        return SurveyMapper.toDto(surveyRepository.saveAndFlush(survey));
     }
 
     @Override
@@ -137,7 +152,7 @@ public class SurveyServiceImpl implements SurveyService {
             Instant opensFrom, Instant opensTo, Instant closesFrom, Instant closesTo,
             Pageable pageable) {
 
-        Specification<SurveyEntity> spec = Specification.anyOf(
+        Specification<SurveyEntity> spec = Specification.allOf(
                 SurveySpecifications.all(),
                 SurveySpecifications.text(qText),
                 SurveySpecifications.titleContains(title),

@@ -44,7 +44,7 @@ public class SurveyResponseServiceImpl implements SurveyResponseService {
         response.setUserIamId(userId);
         response.setAnswerYesNoMaybe(answer.answer());
         response.setComment(answer.comment());
-        return SurveyResponseMapper.toDto(surveyResponseRepository.save(response)); // upsert - si no existe lo crea y si existe lo actualiza
+        return SurveyResponseMapper.toDto(surveyResponseRepository.saveAndFlush(response)); // upsert - si no existe lo crea y si existe lo actualiza
     }
 
     @Override

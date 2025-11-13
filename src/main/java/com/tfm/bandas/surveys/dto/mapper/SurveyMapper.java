@@ -17,6 +17,7 @@ public class SurveyMapper {
     if (entity == null) return null;
     return new SurveyDTO(
       entity.getId(),
+      entity.getVersion(),
       entity.getEventId(),
       entity.getTitle(),
       entity.getDescription(),
