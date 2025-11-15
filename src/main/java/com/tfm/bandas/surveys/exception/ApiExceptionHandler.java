@@ -87,7 +87,6 @@ public class ApiExceptionHandler {
     return Map.of("error", "Internal Error", "message", ex.getMessage());
   }
 
-  // ... en tu GlobalExceptionHandler
   @ExceptionHandler(PreconditionRequiredException.class)
   @ResponseStatus(HttpStatus.PRECONDITION_REQUIRED) // 428
   public Map<String, Object> handlePreconditionRequired(RuntimeException ex) {

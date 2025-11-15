@@ -58,7 +58,6 @@ public class SurveyController {
                                              @PathVariable String surveyId) {
         logger.info("Calling deleteSurvey with surveyId={}, ifMatch={}", surveyId, ifMatch);
         int version = EtagUtils.parseIfMatchToVersion(ifMatch);
-        logger.info("Parsed If-Match version: {}", version);
         surveyService.deleteSurvey(surveyId, version);
         logger.info("deleteSurvey Completed successfully for surveyId={}", surveyId);
         return ResponseEntity.noContent().build();
@@ -72,7 +71,6 @@ public class SurveyController {
             @Valid @RequestBody UpdateSurveyRequestDTO dto) {
         logger.info("Calling updateSurvey with arguments: idSurvey={}, dto={}, ifMatch={}", idSurvey, dto, ifMatch);
         int version = EtagUtils.parseIfMatchToVersion(ifMatch);
-        logger.info("Parsed If-Match version: {}", version);
         SurveyDTO updated = surveyService.updateSurvey(idSurvey, version, dto);
         logger.info("updateSurvey returning: {}", updated);
         return EtagUtils.withEtag(ResponseEntity.ok(), updated.version(), updated);
@@ -84,7 +82,6 @@ public class SurveyController {
                                                 @PathVariable String surveyId) {
         logger.info("Calling openSurvey with surveyId={}, ifMatch={}", surveyId, ifMatch);
         int version = EtagUtils.parseIfMatchToVersion(ifMatch);
-        logger.info("Parsed If-Match version: {}", version);
         SurveyDTO response = surveyService.openSurvey(surveyId, version);
         logger.info("openSurvey Completed successfully for survey={}", response);
         return EtagUtils.withEtag(ResponseEntity.ok(), response.version(), response);
@@ -96,7 +93,6 @@ public class SurveyController {
                                                  @PathVariable String surveyId) {
         logger.info("Calling closeSurvey with surveyId={}, ifMatch={}", surveyId, ifMatch);
         int version = EtagUtils.parseIfMatchToVersion(ifMatch);
-        logger.info("Parsed If-Match version: {}", version);
         SurveyDTO response = surveyService.closeSurvey(surveyId, version);
         logger.info("closeSurvey Completed successfully for survey={}", response);
         return EtagUtils.withEtag(ResponseEntity.ok(), response.version(), response);
@@ -108,7 +104,6 @@ public class SurveyController {
                                                   @PathVariable String surveyId) {
         logger.info("Calling cancelSurvey with surveyId={}, ifMatch={}", surveyId, ifMatch);
         int version = EtagUtils.parseIfMatchToVersion(ifMatch);
-        logger.info("Parsed If-Match version: {}", version);
         SurveyDTO response = surveyService.cancelSurvey(surveyId, version);
         logger.info("cancelSurvey Completed successfully for survey={}", response);
         return EtagUtils.withEtag(ResponseEntity.ok(), response.version(), response);
@@ -214,7 +209,6 @@ public class SurveyController {
         String userId = jwt.getSubject();
         logger.info("Calling updateMyResponse with surveyId={} for userId={}, bodyDto={}, ifMatch={}", surveyId, userId, bodyDto, ifMatch);
         int version = EtagUtils.parseIfMatchToVersion(ifMatch);
-        logger.info("Parsed If-Match version: {}", version);
         SurveyResponseDTO updated = surveyResponseService.updateMyResponse(surveyId, userId, version, bodyDto);
         logger.info("updateMyResponse returning: {}", updated);
         return EtagUtils.withEtag(ResponseEntity.ok(), updated.version(), updated);
@@ -229,7 +223,6 @@ public class SurveyController {
         String userId = jwt.getSubject();
         logger.info("Calling deleteMyResponse with surveyId={} for userId={}, ifMatch={}", surveyId, userId, ifMatch);
         int version = EtagUtils.parseIfMatchToVersion(ifMatch);
-        logger.info("Parsed If-Match version: {}", version);
         surveyResponseService.deleteMyResponse(surveyId, userId, version);
         logger.info("deleteMyResponse completed successfully for surveyId={} and userId={}", surveyId, userId);
         return ResponseEntity.noContent().build();
@@ -245,7 +238,6 @@ public class SurveyController {
             @Valid @RequestBody UpdateSurveyResponseRequestDTO bodyDto) {
         logger.info("Calling updateUserResponse with surveyId={} for targetUserId={}, bodyDto={}, ifMatch={}", surveyId, targetUserId, bodyDto, ifMatch);
         int version = EtagUtils.parseIfMatchToVersion(ifMatch);
-        logger.info("Parsed If-Match version: {}", version);
         SurveyResponseDTO updated = surveyResponseService.updateUserResponse(surveyId, targetUserId, version, bodyDto);
         logger.info("updateUserResponse returning: {}", updated);
         return EtagUtils.withEtag(ResponseEntity.ok(), updated.version(), updated);
@@ -259,7 +251,6 @@ public class SurveyController {
             @RequestHeader(name = HttpHeaders.IF_MATCH, required = false) String ifMatch) {
         logger.info("Calling deleteUserResponse with surveyId={} for targetUserId={}, ifMatch={}", surveyId, targetUserId, ifMatch);
         int version = EtagUtils.parseIfMatchToVersion(ifMatch);
-        logger.info("Parsed If-Match version: {}", version);
         surveyResponseService.deleteUserResponse(surveyId, targetUserId, version);
         logger.info("deleteUserResponse completed successfully for surveyId={} and targetUserId={}", surveyId, targetUserId);
         return ResponseEntity.noContent().build();

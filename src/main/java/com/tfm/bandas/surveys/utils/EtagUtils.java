@@ -1,6 +1,7 @@
 // com.tfm.bandas.surveys.web.EtagUtils.java
 package com.tfm.bandas.surveys.utils;
 
+import com.tfm.bandas.surveys.exception.PreconditionFailedException;
 import com.tfm.bandas.surveys.exception.PreconditionRequiredException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
@@ -32,5 +33,12 @@ public final class EtagUtils {
 
   public static <T> ResponseEntity<T> withEtag(ResponseEntity.BodyBuilder builder, int version, T body) {
     return builder.header(HttpHeaders.ETAG, toEtag(version)).body(body);
+  }
+
+  public static void compareVersion(int ifMatchVersion, int entityVersion) {
+    // If-Match contra @Version
+    if (entityVersion != ifMatchVersion) {
+      throw new PreconditionFailedException("ETag mismatch. Current version is " + entityVersion + ", expected " + ifMatchVersion);
+    }
   }
 }

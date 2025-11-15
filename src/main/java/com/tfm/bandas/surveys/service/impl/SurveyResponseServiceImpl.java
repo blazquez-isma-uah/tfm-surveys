@@ -24,6 +24,8 @@ import java.util.EnumMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
+import static com.tfm.bandas.surveys.utils.EtagUtils.compareVersion;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -86,11 +88,7 @@ public class SurveyResponseServiceImpl implements SurveyResponseService {
         SurveyResponseEntity response = surveyResponseRepository.findBySurveyIdAndUserIamId(surveyId, userId)
                 .orElseThrow(() -> new NoSuchElementException("Response not found for user"));
 
-        // If-Match vs @Version
-        if (response.getVersion() != ifMatchVersion) {
-            throw new PreconditionFailedException("ETag mismatch. Current version is " + response.getVersion());
-        }
-
+        compareVersion(ifMatchVersion, response.getVersion());
         response.setAnswerYesNoMaybe(dto.answer());
         response.setComment(dto.comment());
         response.setAnsweredAt(Instant.now());
@@ -106,10 +104,7 @@ public class SurveyResponseServiceImpl implements SurveyResponseService {
         SurveyResponseEntity response = surveyResponseRepository.findBySurveyIdAndUserIamId(surveyId, userId)
                 .orElseThrow(() -> new NoSuchElementException("Response not found for user"));
 
-        if (response.getVersion() != ifMatchVersion) {
-            throw new PreconditionFailedException("ETag mismatch. Current version is " + response.getVersion());
-        }
-
+        compareVersion(ifMatchVersion, response.getVersion());
         surveyResponseRepository.delete(response);
     }
 
