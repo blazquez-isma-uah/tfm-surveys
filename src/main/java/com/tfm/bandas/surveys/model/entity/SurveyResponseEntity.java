@@ -35,6 +35,10 @@ public class SurveyResponseEntity {
   @Column(name = "answer_yes_no_maybe", length = 10, nullable = false)
   private YesNoMaybeAnswer answerYesNoMaybe;
 
+  // Instrumento seleccionado (solo para YES_NO_MAYBE_WITH_INSTRUMENT cuando answer = YES o MAYBE)
+  @Column(name = "instrument_id", length = 100)
+  private String instrumentId;
+
   @Column(name = "comment", length = 1000)
   private String comment;
 

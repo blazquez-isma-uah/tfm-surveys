@@ -10,7 +10,7 @@ public record SurveyResponseDTO(
   String surveyId,
   String userIamId,
   YesNoMaybeAnswer answerYesNoMaybe,
+  String instrumentId,
   String comment,
   Instant answeredAt
 ) {}
-

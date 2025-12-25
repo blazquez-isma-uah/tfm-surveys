@@ -40,21 +40,29 @@ public class SurveyResponseServiceImpl implements SurveyResponseService {
         SurveyEntity survey = getSurvey(surveyId);
         ensureRespondable(survey);
 
-        SurveyResponseEntity response = surveyResponseRepository.findBySurveyIdAndUserIamId(surveyId, userId)
-                .orElseGet(SurveyResponseEntity::new);
+        // Validar que el instrumento sea obligatorio cuando el tipo de encuesta lo requiere
+        validateInstrumentRequirement(survey, answer.answer(), answer.instrumentId());
+
+        surveyResponseRepository.findBySurveyIdAndUserIamId(surveyId, userId)
+                .ifPresent(r -> { throw new PreconditionFailedException("Response already exists for user"); });
+
+        SurveyResponseEntity response = new SurveyResponseEntity();
         response.setSurveyId(surveyId);
         response.setUserIamId(userId);
         response.setAnswerYesNoMaybe(answer.answer());
+        response.setInstrumentId(answer.instrumentId());
         response.setComment(answer.comment());
-        return SurveyResponseMapper.toDto(surveyResponseRepository.saveAndFlush(response)); // upsert - si no existe lo crea y si existe lo actualiza
+        response.setAnsweredAt(Instant.now());
+        return SurveyResponseMapper.toDto(surveyResponseRepository.saveAndFlush(response));
     }
 
     @Override
     @Transactional(readOnly = true)
     public Map<YesNoMaybeAnswer, Long> resultsYesNoMaybeOfSurvey(String surveyId) {
         SurveyEntity survey = getSurvey(surveyId);
-        if (survey.getResponseType() != ResponseType.YES_NO_MAYBE) {
-            throw new IllegalStateException("Survey response type is not YES_NO_MAYBE");
+        if (survey.getResponseType() != ResponseType.YES_NO_MAYBE
+            && survey.getResponseType() != ResponseType.YES_NO_MAYBE_WITH_INSTRUMENT) {
+            throw new IllegalStateException("Survey response type is not YES_NO_MAYBE or YES_NO_MAYBE_WITH_INSTRUMENT");
         }
         Map<YesNoMaybeAnswer, Long> answers = new EnumMap<>(YesNoMaybeAnswer.class);
         for (YesNoMaybeAnswer y : YesNoMaybeAnswer.values()) {
@@ -85,11 +93,15 @@ public class SurveyResponseServiceImpl implements SurveyResponseService {
         SurveyEntity survey = getSurvey(surveyId);
         ensureRespondable(survey);
 
+        // Validar que el instrumento sea obligatorio cuando el tipo de encuesta lo requiere
+        validateInstrumentRequirement(survey, dto.answer(), dto.instrumentId());
+
         SurveyResponseEntity response = surveyResponseRepository.findBySurveyIdAndUserIamId(surveyId, userId)
                 .orElseThrow(() -> new NoSuchElementException("Response not found for user"));
 
         compareVersion(ifMatchVersion, response.getVersion());
         response.setAnswerYesNoMaybe(dto.answer());
+        response.setInstrumentId(dto.instrumentId());
         response.setComment(dto.comment());
         response.setAnsweredAt(Instant.now());
 
@@ -124,6 +136,17 @@ public class SurveyResponseServiceImpl implements SurveyResponseService {
     }
 
     // ---- helpers ----
+
+    private void validateInstrumentRequirement(SurveyEntity survey, YesNoMaybeAnswer answer, String instrumentId) {
+        // Si la encuesta requiere instrumento y la respuesta es YES o MAYBE, el instrumento es obligatorio
+        if (survey.getResponseType() == ResponseType.YES_NO_MAYBE_WITH_INSTRUMENT) {
+            if ((answer == YesNoMaybeAnswer.YES || answer == YesNoMaybeAnswer.MAYBE)
+                && (instrumentId == null || instrumentId.isBlank())) {
+                throw new IllegalArgumentException("Instrument is required when answering YES or MAYBE for this survey");
+            }
+        }
+    }
+
     private void ensureRespondable(SurveyEntity survey) {
         Instant now = Instant.now();
         if (survey.getStatus() != SurveyStatus.OPEN) throw new IllegalStateException("Survey not open");

@@ -3,10 +3,7 @@ package com.tfm.bandas.surveys.controller;
 import com.tfm.bandas.surveys.dto.*;
 import com.tfm.bandas.surveys.service.SurveyResponseService;
 import com.tfm.bandas.surveys.service.SurveyService;
-import com.tfm.bandas.surveys.utils.EtagUtils;
-import com.tfm.bandas.surveys.utils.PaginatedResponse;
-import com.tfm.bandas.surveys.utils.SurveyStatus;
-import com.tfm.bandas.surveys.utils.YesNoMaybeAnswer;
+import com.tfm.bandas.surveys.utils.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -254,6 +251,27 @@ public class SurveyController {
         surveyResponseService.deleteUserResponse(surveyId, targetUserId, version);
         logger.info("deleteUserResponse completed successfully for surveyId={} and targetUserId={}", surveyId, targetUserId);
         return ResponseEntity.noContent().build();
+    }
+
+    // Get lista de tipos de respuesta
+    @PreAuthorize("hasAnyRole('ADMIN','MUSICIAN')")
+    @GetMapping("/available-responseTypes")
+    public ResponseEntity<ResponseType[]> getResponseTypes() {
+        return ResponseEntity.ok(ResponseType.values());
+    }
+
+    // Get lista de tipos de respuesta YesNoMaybe
+    @PreAuthorize("hasAnyRole('ADMIN','MUSICIAN')")
+    @GetMapping("/available-yesNoMaybeAnswers")
+    public ResponseEntity<YesNoMaybeAnswer[]> getYesNoMaybeAnswers() {
+        return ResponseEntity.ok(YesNoMaybeAnswer.values());
+    }
+
+    // Get lista de estados de encuesta
+    @PreAuthorize("hasAnyRole('ADMIN','MUSICIAN')")
+    @GetMapping("/available-statuses")
+    public ResponseEntity<SurveyStatus[]> getSurveyStatuses() {
+        return ResponseEntity.ok(SurveyStatus.values());
     }
 
 }

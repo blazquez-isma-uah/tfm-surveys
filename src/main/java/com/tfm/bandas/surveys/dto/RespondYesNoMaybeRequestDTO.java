@@ -6,5 +6,6 @@ import jakarta.validation.constraints.Size;
 
 public record RespondYesNoMaybeRequestDTO(
   @NotNull YesNoMaybeAnswer answer,
+  String instrumentId, // Obligatorio solo si la encuesta es YES_NO_MAYBE_WITH_INSTRUMENT y answer es YES o MAYBE
   @Size(max=1000) String comment
 ) {}

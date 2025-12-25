@@ -1,4 +1,3 @@
-// com.tfm.bandas.surveys.dto.UpdateSurveyResponseRequestDTO.java
 package com.tfm.bandas.surveys.dto;
 
 import com.tfm.bandas.surveys.utils.YesNoMaybeAnswer;
@@ -8,6 +7,8 @@ import jakarta.validation.constraints.Size;
 public record UpdateSurveyResponseRequestDTO(
   @NotNull
   YesNoMaybeAnswer answer,
+
+  String instrumentId,
 
   @Size(max = 1000)
   String comment

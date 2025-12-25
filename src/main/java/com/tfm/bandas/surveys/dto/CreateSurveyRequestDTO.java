@@ -1,5 +1,6 @@
 package com.tfm.bandas.surveys.dto;
 
+import com.tfm.bandas.surveys.utils.ResponseType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -10,6 +11,7 @@ public record CreateSurveyRequestDTO(
   @NotNull String eventId,
   @NotBlank @Size(max = 200) String title,
   @Size(max = 4000) String description,
+  ResponseType responseType, // Opcional, por defecto YES_NO_MAYBE
   Instant opensAt,
   Instant closesAt
 ) {}

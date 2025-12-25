@@ -59,7 +59,7 @@ public class SurveyMapper {
     entityBuilder.closesAt(createRequest.closesAt());
     // Valores por defecto
     entityBuilder.status(SurveyStatus.DRAFT);
-    entityBuilder.responseType(ResponseType.YES_NO_MAYBE);
+    entityBuilder.responseType(createRequest.responseType() != null ? createRequest.responseType() : ResponseType.YES_NO_MAYBE);
 
     entityBuilder.createdAt(Instant.now());
     entityBuilder.updatedAt(Instant.now());
@@ -67,4 +67,3 @@ public class SurveyMapper {
   }
 
 }
-

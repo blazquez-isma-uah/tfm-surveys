@@ -14,6 +14,7 @@ public final class SurveyResponseMapper {
       entity.getSurveyId(),
       entity.getUserIamId(),
       entity.getAnswerYesNoMaybe(),
+      entity.getInstrumentId(),
       entity.getComment(),
       entity.getAnsweredAt()
     );
@@ -27,9 +28,9 @@ public final class SurveyResponseMapper {
       .surveyId(dto.surveyId())
       .userIamId(dto.userIamId())
       .answerYesNoMaybe(dto.answerYesNoMaybe())
+      .instrumentId(dto.instrumentId())
       .comment(dto.comment())
       .answeredAt(dto.answeredAt())
       .build();
   }
 }
-
