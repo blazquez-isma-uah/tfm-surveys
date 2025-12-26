@@ -1,6 +1,7 @@
 // com.tfm.bandas.surveys.dto.UpdateSurveyRequestDTO.java
 package com.tfm.bandas.surveys.dto;
 
+import com.tfm.bandas.surveys.utils.SurveyType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -13,6 +14,9 @@ public record UpdateSurveyRequestDTO(
 
   @Size(max = 4000)
   String description,
+
+  @NotNull
+  SurveyType surveyType,
 
   @NotNull
   Instant opensAt,

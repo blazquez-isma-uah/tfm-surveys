@@ -3,12 +3,12 @@ package com.tfm.bandas.surveys.service.impl;
 import com.tfm.bandas.surveys.client.EventsClient;
 import com.tfm.bandas.surveys.dto.*;
 import com.tfm.bandas.surveys.dto.mapper.SurveyMapper;
-import com.tfm.bandas.surveys.exception.PreconditionFailedException;
 import com.tfm.bandas.surveys.model.entity.SurveyEntity;
 import com.tfm.bandas.surveys.model.repository.SurveyRepository;
 import com.tfm.bandas.surveys.model.specification.SurveySpecifications;
 import com.tfm.bandas.surveys.service.SurveyService;
 import com.tfm.bandas.surveys.utils.SurveyStatus;
+import com.tfm.bandas.surveys.utils.SurveyType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -42,6 +42,15 @@ public class SurveyServiceImpl implements SurveyService {
         }
 
         SurveyEntity entity = SurveyMapper.toEntity(survey);
+
+        // Validar unicidad: solo puede haber una encuesta de tipo ATTENDANCE por evento
+        SurveyType surveyType = entity.getSurveyType();
+        if (surveyType == SurveyType.ATTENDANCE) {
+            if (surveyRepository.existsByEventIdAndSurveyType(survey.eventId(), SurveyType.ATTENDANCE)) {
+                throw new IllegalArgumentException("An ATTENDANCE survey already exists for event: " + survey.eventId());
+            }
+        }
+
         entity.setCreatedBy(userCreatorId);
         return SurveyMapper.toDto(surveyRepository.saveAndFlush(entity));
     }
@@ -71,6 +80,18 @@ public class SurveyServiceImpl implements SurveyService {
                 .orElseThrow(() -> new java.util.NoSuchElementException("Survey not found: " + surveyId));
 
         compareVersion(ifMatchVersion, surveyEntity.getVersion());
+
+        // Validar unicidad si se intenta cambiar a ATTENDANCE
+        // Solo validar si el tipo está cambiando Y el nuevo tipo es ATTENDANCE
+        SurveyType currentType = surveyEntity.getSurveyType();
+        SurveyType newType = survey.surveyType();
+
+        if (newType == SurveyType.ATTENDANCE && currentType != SurveyType.ATTENDANCE) {
+            // Se está intentando cambiar a ATTENDANCE, verificar que no exista otra
+            if (surveyRepository.existsByEventIdAndSurveyType(surveyEntity.getEventId(), SurveyType.ATTENDANCE)) {
+                throw new IllegalArgumentException("An ATTENDANCE survey already exists for event: " + surveyEntity.getEventId());
+            }
+        }
 
         // Reglas por estado
         switch (surveyEntity.getStatus()) {
@@ -161,6 +182,7 @@ public class SurveyServiceImpl implements SurveyService {
     private void applyPutDraft(SurveyEntity e, UpdateSurveyRequestDTO dto) {
         e.setTitle(dto.title());
         e.setDescription(dto.description());
+        e.setSurveyType(dto.surveyType());
         e.setOpensAt(dto.opensAt());
         e.setClosesAt(dto.closesAt());
     }
@@ -168,6 +190,7 @@ public class SurveyServiceImpl implements SurveyService {
     private void applyPutOpen(SurveyEntity e, UpdateSurveyRequestDTO dto) {
         e.setTitle(dto.title());
         e.setDescription(dto.description());
+        e.setSurveyType(dto.surveyType());
 
         // opensAt no se puede modificar en OPEN
         if (!dto.opensAt().equals(e.getOpensAt())) {

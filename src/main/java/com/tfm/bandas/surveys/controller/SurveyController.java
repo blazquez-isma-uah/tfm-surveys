@@ -274,4 +274,11 @@ public class SurveyController {
         return ResponseEntity.ok(SurveyStatus.values());
     }
 
+    // Get lista de tipos de encuesta
+    @PreAuthorize("hasAnyRole('ADMIN','MUSICIAN')")
+    @GetMapping("/available-surveyTypes")
+    public ResponseEntity<SurveyType[]> getSurveyTypes() {
+        return ResponseEntity.ok(SurveyType.values());
+    }
+
 }
