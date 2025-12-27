@@ -2,7 +2,7 @@ package com.tfm.bandas.surveys.service;
 
 import com.tfm.bandas.surveys.dto.*;
 import com.tfm.bandas.surveys.utils.SurveyStatus;
-import com.tfm.bandas.surveys.utils.YesNoMaybeAnswer;
+import com.tfm.bandas.surveys.utils.SurveyType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -24,6 +24,25 @@ public interface SurveyService {
           String description,
           String eventId,
           SurveyStatus status,
+          SurveyType surveyType,
+          java.time.Instant opensFrom,
+          java.time.Instant opensTo,
+          java.time.Instant closesFrom,
+          java.time.Instant closesTo,
+          Pageable pageable);
+  Page<SurveyDTO> listSurveysAnsweredByUser(
+          String userId,
+          SurveyStatus status,
+          SurveyType surveyType,
+          java.time.Instant opensFrom,
+          java.time.Instant opensTo,
+          java.time.Instant closesFrom,
+          java.time.Instant closesTo,
+          Pageable pageable);
+  Page<SurveyDTO> listSurveysNotAnsweredByUser(
+          String userId,
+          SurveyStatus status,
+          SurveyType surveyType,
           java.time.Instant opensFrom,
           java.time.Instant opensTo,
           java.time.Instant closesFrom,

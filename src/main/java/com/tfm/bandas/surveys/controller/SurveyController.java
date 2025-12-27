@@ -136,19 +136,59 @@ public class SurveyController {
             @RequestParam(required = false) String description,
             @RequestParam(required = false) String eventId,
             @RequestParam(required = false) SurveyStatus status,
+            @RequestParam(required = false) SurveyType surveyType,
             @RequestParam(required = false) Instant opensFrom,
             @RequestParam(required = false) Instant opensTo,
             @RequestParam(required = false) Instant closesFrom,
             @RequestParam(required = false) Instant closesTo,
             Pageable pageable) {
-        logger.info("Calling search with qText={}, title={}, description={}, eventId={}, status={}, opensFrom={}, opensTo={}, closesFrom={}, closesTo={}, pageable={}",
-                qText, title, description, eventId, status, opensFrom, opensTo, closesFrom, closesTo, pageable);
+        logger.info("Calling search with qText={}, title={}, description={}, eventId={}, status={}, surveyType={}, opensFrom={}, opensTo={}, closesFrom={}, closesTo={}, pageable={}",
+                qText, title, description, eventId, status, surveyType, opensFrom, opensTo, closesFrom, closesTo, pageable);
         PaginatedResponse<SurveyDTO> response = PaginatedResponse.from(
-                surveyService.searchSurveys(qText, title, description, eventId, status, opensFrom, opensTo, closesFrom, closesTo, pageable));
+                surveyService.searchSurveys(qText, title, description, eventId, status, surveyType, opensFrom, opensTo, closesFrom, closesTo, pageable));
         logger.info("search returning {} surveys", response.size());
         return ResponseEntity.ok(response);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN','MUSICIAN')")
+    @GetMapping("/answered/me")
+    public ResponseEntity<PaginatedResponse<SurveyDTO>> listMyAnsweredSurveys(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestParam(required = false) SurveyStatus status,
+            @RequestParam(required = false) SurveyType surveyType,
+            @RequestParam(required = false) Instant opensFrom,
+            @RequestParam(required = false) Instant opensTo,
+            @RequestParam(required = false) Instant closesFrom,
+            @RequestParam(required = false) Instant closesTo,
+            @PageableDefault(size = 10) Pageable pageable) {
+        String userId = jwt.getSubject();
+        logger.info("Calling listMyAnsweredSurveys for userId={}, status={}, surveyType={}, opensFrom={}, opensTo={}, closesFrom={}, closesTo={}",
+                userId, status, surveyType, opensFrom, opensTo, closesFrom, closesTo);
+        PaginatedResponse<SurveyDTO> response = PaginatedResponse.from(
+                surveyService.listSurveysAnsweredByUser(userId, status, surveyType, opensFrom, opensTo, closesFrom, closesTo, pageable));
+        logger.info("listMyAnsweredSurveys returning {} surveys for userId={}", response.size(), userId);
+        return ResponseEntity.ok(response);
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN','MUSICIAN')")
+    @GetMapping("/notAnswered/me")
+    public ResponseEntity<PaginatedResponse<SurveyDTO>> listMyNotAnsweredSurveys(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestParam(required = false) SurveyStatus status,
+            @RequestParam(required = false) SurveyType surveyType,
+            @RequestParam(required = false) Instant opensFrom,
+            @RequestParam(required = false) Instant opensTo,
+            @RequestParam(required = false) Instant closesFrom,
+            @RequestParam(required = false) Instant closesTo,
+            @PageableDefault(size = 10) Pageable pageable) {
+        String userId = jwt.getSubject();
+        logger.info("Calling listMyNotAnsweredSurveys for userId={}, status={}, surveyType={}, opensFrom={}, opensTo={}, closesFrom={}, closesTo={}",
+                userId, status, surveyType, opensFrom, opensTo, closesFrom, closesTo);
+        PaginatedResponse<SurveyDTO> response = PaginatedResponse.from(
+                surveyService.listSurveysNotAnsweredByUser(userId, status, surveyType, opensFrom, opensTo, closesFrom, closesTo, pageable));
+        logger.info("listMyNotAnsweredSurveys returning {} surveys for userId={}", response.size(), userId);
+        return ResponseEntity.ok(response);
+    }
 
     // -------------------- Survey Responses ------------------- //
 

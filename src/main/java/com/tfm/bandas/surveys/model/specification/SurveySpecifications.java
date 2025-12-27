@@ -3,6 +3,7 @@ package com.tfm.bandas.surveys.model.specification;
 
 import com.tfm.bandas.surveys.model.entity.SurveyEntity;
 import com.tfm.bandas.surveys.utils.SurveyStatus;
+import com.tfm.bandas.surveys.utils.SurveyType;
 import org.springframework.data.jpa.domain.Specification;
 
 public final class SurveySpecifications {
@@ -43,6 +44,11 @@ public final class SurveySpecifications {
   public static Specification<SurveyEntity> statusEquals(SurveyStatus status) {
     if (status == null) return null;
     return (root, cq, cb) -> cb.equal(root.get("status"), status);
+  }
+
+  public static Specification<SurveyEntity> surveyTypeEquals(SurveyType surveyType) {
+    if (surveyType == null) return null;
+    return (root, cq, cb) -> cb.equal(root.get("surveyType"), surveyType);
   }
 
   // Si quieres filtrar por ventana:

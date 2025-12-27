@@ -159,7 +159,7 @@ public class SurveyServiceImpl implements SurveyService {
 
     @Override
     public Page<SurveyDTO> searchSurveys(
-            String qText, String title, String description, String eventId, SurveyStatus status,
+            String qText, String title, String description, String eventId, SurveyStatus status, SurveyType surveyType,
             Instant opensFrom, Instant opensTo, Instant closesFrom, Instant closesTo,
             Pageable pageable) {
 
@@ -170,12 +170,43 @@ public class SurveyServiceImpl implements SurveyService {
                 SurveySpecifications.descriptionContains(description),
                 SurveySpecifications.eventIdEquals(eventId),
                 SurveySpecifications.statusEquals(status),
+                SurveySpecifications.surveyTypeEquals(surveyType),
                 SurveySpecifications.opensAtFrom(opensFrom),
                 SurveySpecifications.opensAtTo(opensTo),
                 SurveySpecifications.closesAtFrom(closesFrom),
                 SurveySpecifications.closesAtTo(closesTo));
 
         return surveyRepository.findAll(spec, pageable).map(SurveyMapper::toDto); // usa tu mapper
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<SurveyDTO> listSurveysAnsweredByUser(
+            String userId,
+            SurveyStatus status,
+            SurveyType surveyType,
+            Instant opensFrom,
+            Instant opensTo,
+            Instant closesFrom,
+            Instant closesTo,
+            Pageable pageable) {
+        return surveyRepository.findSurveysAnsweredByUser(userId, status, surveyType, opensFrom, opensTo, closesFrom, closesTo, pageable)
+                .map(SurveyMapper::toDto);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<SurveyDTO> listSurveysNotAnsweredByUser(
+            String userId,
+            SurveyStatus status,
+            SurveyType surveyType,
+            Instant opensFrom,
+            Instant opensTo,
+            Instant closesFrom,
+            Instant closesTo,
+            Pageable pageable) {
+        return surveyRepository.findSurveysNotAnsweredByUser(userId, status, surveyType, opensFrom, opensTo, closesFrom, closesTo, pageable)
+                .map(SurveyMapper::toDto);
     }
 
 
