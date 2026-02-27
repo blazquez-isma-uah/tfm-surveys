@@ -23,4 +23,7 @@ public interface SurveyResponseRepository extends JpaRepository<SurveyResponseEn
 
   void deleteBySurveyIdAndUserIamId(String surveyId, String userIamId);
 
+  // Delete all responses belonging to a survey
+  void deleteBySurveyId(String surveyId);
+
 }

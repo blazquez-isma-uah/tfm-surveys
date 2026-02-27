@@ -106,6 +106,17 @@ public class SurveyController {
         return EtagUtils.withEtag(ResponseEntity.ok(), response.version(), response);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/{surveyId}/reset")
+    public ResponseEntity<SurveyDTO> resetSurvey(@RequestHeader(name = HttpHeaders.IF_MATCH, required = false) String ifMatch,
+                                                 @PathVariable String surveyId) {
+        logger.info("Calling resetSurvey with surveyId={}, ifMatch={}", surveyId, ifMatch);
+        int version = EtagUtils.parseIfMatchToVersion(ifMatch);
+        SurveyDTO response = surveyService.resetSurvey(surveyId, version);
+        logger.info("resetSurvey Completed successfully for survey={}", response);
+        return EtagUtils.withEtag(ResponseEntity.ok(), response.version(), response);
+    }
+
     @PreAuthorize("hasAnyRole('ADMIN', 'MUSICIAN')")
     @GetMapping("/listOpen/{eventId}")
     public ResponseEntity<PaginatedResponse<SurveyDTO>> listOpenSurveyByEventId(@PathVariable String eventId
@@ -182,8 +193,7 @@ public class SurveyController {
             @RequestParam(required = false) Instant closesTo,
             @PageableDefault(size = 10) Pageable pageable) {
         String userId = jwt.getSubject();
-        logger.info("Calling listMyNotAnsweredSurveys for userId={}, status={}, surveyType={}, opensFrom={}, opensTo={}, closesFrom={}, closesTo={}",
-                userId, status, surveyType, opensFrom, opensTo, closesFrom, closesTo);
+        logger.info("Calling listMyNotAnsweredSurveys for userId={}, status={}, surveyType={}, opensFrom={}, opensTo={}, closesFrom={}, closesTo={}", userId, status, surveyType, opensFrom, opensTo, closesFrom, closesTo);
         PaginatedResponse<SurveyDTO> response = PaginatedResponse.from(
                 surveyService.listSurveysNotAnsweredByUser(userId, status, surveyType, opensFrom, opensTo, closesFrom, closesTo, pageable));
         logger.info("listMyNotAnsweredSurveys returning {} surveys for userId={}", response.size(), userId);

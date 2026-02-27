@@ -5,6 +5,7 @@ import com.tfm.bandas.surveys.dto.*;
 import com.tfm.bandas.surveys.dto.mapper.SurveyMapper;
 import com.tfm.bandas.surveys.model.entity.SurveyEntity;
 import com.tfm.bandas.surveys.model.repository.SurveyRepository;
+import com.tfm.bandas.surveys.model.repository.SurveyResponseRepository;
 import com.tfm.bandas.surveys.model.specification.SurveySpecifications;
 import com.tfm.bandas.surveys.service.SurveyService;
 import com.tfm.bandas.surveys.utils.SurveyStatus;
@@ -27,6 +28,7 @@ public class SurveyServiceImpl implements SurveyService {
 
     private final SurveyRepository surveyRepository;
     private final EventsClient eventsClient;
+    private final SurveyResponseRepository surveyResponseRepository;
 
     @Override
     @Transactional
@@ -141,6 +143,27 @@ public class SurveyServiceImpl implements SurveyService {
         if (survey.getStatus() == SurveyStatus.CANCELLED) return SurveyMapper.toDto(survey);
         survey.setStatus(SurveyStatus.CANCELLED);
         return SurveyMapper.toDto(surveyRepository.saveAndFlush(survey));
+    }
+
+    @Override
+    @Transactional
+    public SurveyDTO resetSurvey(String suveyId, int ifMatchVersion) {
+        SurveyEntity survey = surveyRepository.findById(suveyId).orElseThrow();
+        compareVersion(ifMatchVersion, survey.getVersion());
+
+        // Sólo permitir reset si la encuesta está en CLOSED o CANCELLED
+        if (survey.getStatus() != SurveyStatus.CLOSED && survey.getStatus() != SurveyStatus.CANCELLED) {
+            throw new IllegalStateException("Only CLOSED or CANCELLED surveys can be reset");
+        }
+
+        // Borrar todas las respuestas asociadas a esta encuesta
+        surveyResponseRepository.deleteBySurveyId(suveyId);
+
+        // Poner la encuesta a DRAFT
+        survey.setStatus(SurveyStatus.DRAFT);
+
+        SurveyEntity saved = surveyRepository.saveAndFlush(survey);
+        return SurveyMapper.toDto(saved);
     }
 
     @Override

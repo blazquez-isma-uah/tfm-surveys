@@ -16,6 +16,7 @@ public interface SurveyService {
   SurveyDTO openSurvey(String suveyId, int ifMatchVersion);
   SurveyDTO closeSurvey(String suveyId, int ifMatchVersion);
   SurveyDTO cancelSurvey(String suveyId, int ifMatchVersion);
+  SurveyDTO resetSurvey(String suveyId, int ifMatchVersion);
   Page<SurveyDTO> listOpenSurveysForEvent(String eventId, Pageable pageable);
   Page<SurveyDTO> listAllSurveysForEvent(String eventId, Pageable pageable);
   Page<SurveyDTO> searchSurveys(
