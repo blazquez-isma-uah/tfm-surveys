@@ -236,6 +236,7 @@ public class SurveyServiceImpl implements SurveyService {
     private void applyPutDraft(SurveyEntity e, UpdateSurveyRequestDTO dto) {
         e.setTitle(dto.title());
         e.setDescription(dto.description());
+        e.setResponseType(dto.responseType());
         e.setSurveyType(dto.surveyType());
         e.setOpensAt(dto.opensAt());
         e.setClosesAt(dto.closesAt());
