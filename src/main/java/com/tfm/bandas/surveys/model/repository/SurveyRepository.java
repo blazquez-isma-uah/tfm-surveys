@@ -26,6 +26,8 @@ public interface SurveyRepository extends JpaRepository<SurveyEntity, String>, J
 
   boolean existsByEventIdAndSurveyType(String eventId, SurveyType surveyType);
 
+  void deleteByEventId(String eventId);
+
   @Query("""
     select s from SurveyEntity s
     where exists (

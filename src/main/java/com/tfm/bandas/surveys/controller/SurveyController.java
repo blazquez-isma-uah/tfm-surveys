@@ -60,6 +60,23 @@ public class SurveyController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Borra todas las encuestas (y sus respuestas) asociadas a un evento.
+     * Endpoint pensado para ser invocado exclusivamente por MS Events durante el proceso de borrado de un evento
+     * para garantizar que no queden encuestas huérfanas asociadas a eventos que ya no existen.
+     * No requiere If-Match porque no opera sobre una entidad versionada individual.
+     * @param eventId identificador del evento cuyas encuestas deben eliminarse
+     * @return 204 No Content
+     */
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/event/{eventId}")
+    public ResponseEntity<Void> deleteSurveysByEventId(@PathVariable String eventId) {
+        logger.info("Calling deleteSurveysByEventId with eventId={}", eventId);
+        surveyService.deleteSurveysByEventId(eventId);
+        logger.info("deleteSurveysByEventId completed successfully for eventId={}", eventId);
+        return ResponseEntity.noContent().build();
+    }
+
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{idSurvey}")
     public ResponseEntity<SurveyDTO> updateSurvey(

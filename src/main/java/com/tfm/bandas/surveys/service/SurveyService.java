@@ -49,4 +49,5 @@ public interface SurveyService {
           java.time.Instant closesFrom,
           java.time.Instant closesTo,
           Pageable pageable);
+  void deleteSurveysByEventId(String eventId);
 }

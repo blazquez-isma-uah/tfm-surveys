@@ -233,6 +233,24 @@ public class SurveyServiceImpl implements SurveyService {
     }
 
 
+    /**
+     * Borra todas las encuestas asociadas a un evento y todas sus respuestas.
+     * Elimina en cascada todas las encuestas de un evento sin importar su estado
+     * Esto se hace para garantizar que no queden encuestas huérfanas si el evento es eliminado.
+     */
+    @Override
+    @Transactional
+    public void deleteSurveysByEventId(String eventId) {
+        // Obtener todas las encuestas del evento para borrar sus respuestas asociadas
+        surveyRepository.findByEventId(eventId, Pageable.unpaged())
+                .forEach(survey -> {
+                    // Borrar todas las respuestas asociadas a esta encuesta
+                    surveyResponseRepository.deleteBySurveyId(survey.getId());
+                });
+        // Una vez borradas las respuestas de cada encuesta, borrar todas las encuestas del evento
+        surveyRepository.deleteByEventId(eventId);
+    }
+
     private void applyPutDraft(SurveyEntity e, UpdateSurveyRequestDTO dto) {
         e.setTitle(dto.title());
         e.setDescription(dto.description());
