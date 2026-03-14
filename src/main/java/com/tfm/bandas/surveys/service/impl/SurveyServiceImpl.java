@@ -59,15 +59,15 @@ public class SurveyServiceImpl implements SurveyService {
 
     @Override
     @Transactional(readOnly = true)
-    public SurveyDTO getSurveyById(String suveyId) {
-        SurveyEntity survey = surveyRepository.findById(suveyId).orElseThrow();
+    public SurveyDTO getSurveyById(String surveyId) {
+        SurveyEntity survey = surveyRepository.findById(surveyId).orElseThrow();
         return SurveyMapper.toDto(survey);
     }
 
     @Override
     @Transactional
-    public void deleteSurvey(String suveyId, int ifMatchVersion) {
-        SurveyEntity survey = surveyRepository.findById(suveyId).orElseThrow();
+    public void deleteSurvey(String surveyId, int ifMatchVersion) {
+        SurveyEntity survey = surveyRepository.findById(surveyId).orElseThrow();
         compareVersion(ifMatchVersion, survey.getVersion());
         if (survey.getStatus() == SurveyStatus.OPEN)
             throw new IllegalStateException("Cannot delete an OPEN survey");
@@ -114,8 +114,8 @@ public class SurveyServiceImpl implements SurveyService {
 
     @Override
     @Transactional
-    public SurveyDTO openSurvey(String suveyId, int ifMatchVersion) {
-        SurveyEntity survey = surveyRepository.findById(suveyId).orElseThrow();
+    public SurveyDTO openSurvey(String surveyId, int ifMatchVersion) {
+        SurveyEntity survey = surveyRepository.findById(surveyId).orElseThrow();
         compareVersion(ifMatchVersion, survey.getVersion());
         // Si ya está abierto, no hacer nada, para otros estados, abrirlo
         if (survey.getStatus() == SurveyStatus.OPEN) return SurveyMapper.toDto(survey);
@@ -125,8 +125,8 @@ public class SurveyServiceImpl implements SurveyService {
 
     @Override
     @Transactional
-    public SurveyDTO closeSurvey(String suveyId, int ifMatchVersion) {
-        SurveyEntity survey = surveyRepository.findById(suveyId).orElseThrow();
+    public SurveyDTO closeSurvey(String surveyId, int ifMatchVersion) {
+        SurveyEntity survey = surveyRepository.findById(surveyId).orElseThrow();
         compareVersion(ifMatchVersion, survey.getVersion());
 
         if (survey.getStatus() == SurveyStatus.CLOSED || survey.getStatus() == SurveyStatus.CANCELLED) return SurveyMapper.toDto(survey);
@@ -136,8 +136,8 @@ public class SurveyServiceImpl implements SurveyService {
 
     @Override
     @Transactional
-    public SurveyDTO cancelSurvey(String suveyId, int ifMatchVersion) {
-        SurveyEntity survey = surveyRepository.findById(suveyId).orElseThrow();
+    public SurveyDTO cancelSurvey(String surveyId, int ifMatchVersion) {
+        SurveyEntity survey = surveyRepository.findById(surveyId).orElseThrow();
 
         compareVersion(ifMatchVersion, survey.getVersion());
         if (survey.getStatus() == SurveyStatus.CANCELLED) return SurveyMapper.toDto(survey);
@@ -147,8 +147,8 @@ public class SurveyServiceImpl implements SurveyService {
 
     @Override
     @Transactional
-    public SurveyDTO resetSurvey(String suveyId, int ifMatchVersion) {
-        SurveyEntity survey = surveyRepository.findById(suveyId).orElseThrow();
+    public SurveyDTO resetSurvey(String surveyId, int ifMatchVersion) {
+        SurveyEntity survey = surveyRepository.findById(surveyId).orElseThrow();
         compareVersion(ifMatchVersion, survey.getVersion());
 
         // Sólo permitir reset si la encuesta está en CLOSED o CANCELLED
@@ -157,7 +157,7 @@ public class SurveyServiceImpl implements SurveyService {
         }
 
         // Borrar todas las respuestas asociadas a esta encuesta
-        surveyResponseRepository.deleteBySurveyId(suveyId);
+        surveyResponseRepository.deleteBySurveyId(surveyId);
 
         // Poner la encuesta a DRAFT
         survey.setStatus(SurveyStatus.DRAFT);

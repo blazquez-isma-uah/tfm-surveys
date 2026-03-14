@@ -10,13 +10,13 @@ import java.util.Map;
 
 public interface SurveyService {
   SurveyDTO createSurvey(CreateSurveyRequestDTO survey, String userCreatorId);
-  SurveyDTO getSurveyById(String suveyId);
-  void deleteSurvey(String suveyId, int ifMatchVersion);
-  SurveyDTO updateSurvey(String suveyId, int ifMatchVersion, UpdateSurveyRequestDTO survey);
-  SurveyDTO openSurvey(String suveyId, int ifMatchVersion);
-  SurveyDTO closeSurvey(String suveyId, int ifMatchVersion);
-  SurveyDTO cancelSurvey(String suveyId, int ifMatchVersion);
-  SurveyDTO resetSurvey(String suveyId, int ifMatchVersion);
+  SurveyDTO getSurveyById(String surveyId);
+  void deleteSurvey(String surveyId, int ifMatchVersion);
+  SurveyDTO updateSurvey(String surveyId, int ifMatchVersion, UpdateSurveyRequestDTO survey);
+  SurveyDTO openSurvey(String surveyId, int ifMatchVersion);
+  SurveyDTO closeSurvey(String surveyId, int ifMatchVersion);
+  SurveyDTO cancelSurvey(String surveyId, int ifMatchVersion);
+  SurveyDTO resetSurvey(String surveyId, int ifMatchVersion);
   Page<SurveyDTO> listOpenSurveysForEvent(String eventId, Pageable pageable);
   Page<SurveyDTO> listAllSurveysForEvent(String eventId, Pageable pageable);
   Page<SurveyDTO> searchSurveys(

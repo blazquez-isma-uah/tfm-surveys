@@ -51,7 +51,7 @@ public class SurveyController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{surveyId}")
-    public ResponseEntity<Void> deleteSurvey(@RequestHeader(name = HttpHeaders.IF_MATCH, required = false) String ifMatch,
+    public ResponseEntity<Void> deleteSurvey(@RequestHeader(name = HttpHeaders.IF_MATCH, required = true) String ifMatch,
                                              @PathVariable String surveyId) {
         logger.info("Calling deleteSurvey with surveyId={}, ifMatch={}", surveyId, ifMatch);
         int version = EtagUtils.parseIfMatchToVersion(ifMatch);
@@ -81,7 +81,7 @@ public class SurveyController {
     @PutMapping("/{idSurvey}")
     public ResponseEntity<SurveyDTO> updateSurvey(
             @PathVariable String idSurvey,
-            @RequestHeader(name = HttpHeaders.IF_MATCH, required = false) String ifMatch,
+            @RequestHeader(name = HttpHeaders.IF_MATCH, required = true) String ifMatch,
             @Valid @RequestBody UpdateSurveyRequestDTO dto) {
         logger.info("Calling updateSurvey with arguments: idSurvey={}, dto={}, ifMatch={}", idSurvey, dto, ifMatch);
         int version = EtagUtils.parseIfMatchToVersion(ifMatch);
@@ -92,7 +92,7 @@ public class SurveyController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/{surveyId}/open")
-    public ResponseEntity<SurveyDTO> openSurvey(@RequestHeader(name = HttpHeaders.IF_MATCH, required = false) String ifMatch,
+    public ResponseEntity<SurveyDTO> openSurvey(@RequestHeader(name = HttpHeaders.IF_MATCH, required = true) String ifMatch,
                                                 @PathVariable String surveyId) {
         logger.info("Calling openSurvey with surveyId={}, ifMatch={}", surveyId, ifMatch);
         int version = EtagUtils.parseIfMatchToVersion(ifMatch);
@@ -103,7 +103,7 @@ public class SurveyController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/{surveyId}/close")
-    public ResponseEntity<SurveyDTO> closeSurvey(@RequestHeader(name = HttpHeaders.IF_MATCH, required = false) String ifMatch,
+    public ResponseEntity<SurveyDTO> closeSurvey(@RequestHeader(name = HttpHeaders.IF_MATCH, required = true) String ifMatch,
                                                  @PathVariable String surveyId) {
         logger.info("Calling closeSurvey with surveyId={}, ifMatch={}", surveyId, ifMatch);
         int version = EtagUtils.parseIfMatchToVersion(ifMatch);
@@ -114,7 +114,7 @@ public class SurveyController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/{surveyId}/cancel")
-    public ResponseEntity<SurveyDTO> cancelSurvey(@RequestHeader(name = HttpHeaders.IF_MATCH, required = false) String ifMatch,
+    public ResponseEntity<SurveyDTO> cancelSurvey(@RequestHeader(name = HttpHeaders.IF_MATCH, required = true) String ifMatch,
                                                   @PathVariable String surveyId) {
         logger.info("Calling cancelSurvey with surveyId={}, ifMatch={}", surveyId, ifMatch);
         int version = EtagUtils.parseIfMatchToVersion(ifMatch);
@@ -125,7 +125,7 @@ public class SurveyController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/{surveyId}/reset")
-    public ResponseEntity<SurveyDTO> resetSurvey(@RequestHeader(name = HttpHeaders.IF_MATCH, required = false) String ifMatch,
+    public ResponseEntity<SurveyDTO> resetSurvey(@RequestHeader(name = HttpHeaders.IF_MATCH, required = true) String ifMatch,
                                                  @PathVariable String surveyId) {
         logger.info("Calling resetSurvey with surveyId={}, ifMatch={}", surveyId, ifMatch);
         int version = EtagUtils.parseIfMatchToVersion(ifMatch);
@@ -268,7 +268,7 @@ public class SurveyController {
     public ResponseEntity<SurveyResponseDTO> updateMyResponse(
             @PathVariable String surveyId,
             @AuthenticationPrincipal Jwt jwt,
-            @RequestHeader(name = HttpHeaders.IF_MATCH, required = false) String ifMatch,
+            @RequestHeader(name = HttpHeaders.IF_MATCH, required = true) String ifMatch,
             @Valid @RequestBody UpdateSurveyResponseRequestDTO bodyDto) {
         String userId = jwt.getSubject();
         logger.info("Calling updateMyResponse with surveyId={} for userId={}, bodyDto={}, ifMatch={}", surveyId, userId, bodyDto, ifMatch);
@@ -283,7 +283,7 @@ public class SurveyController {
     public ResponseEntity<Void> deleteMyResponse(
             @PathVariable String surveyId,
             @AuthenticationPrincipal Jwt jwt,
-            @RequestHeader(name = HttpHeaders.IF_MATCH, required = false) String ifMatch) {
+            @RequestHeader(name = HttpHeaders.IF_MATCH, required = true) String ifMatch) {
         String userId = jwt.getSubject();
         logger.info("Calling deleteMyResponse with surveyId={} for userId={}, ifMatch={}", surveyId, userId, ifMatch);
         int version = EtagUtils.parseIfMatchToVersion(ifMatch);
@@ -298,7 +298,7 @@ public class SurveyController {
     public ResponseEntity<SurveyResponseDTO> updateUserResponse(
             @PathVariable String surveyId,
             @PathVariable String targetUserId,
-            @RequestHeader(name = HttpHeaders.IF_MATCH, required = false) String ifMatch,
+            @RequestHeader(name = HttpHeaders.IF_MATCH, required = true) String ifMatch,
             @Valid @RequestBody UpdateSurveyResponseRequestDTO bodyDto) {
         logger.info("Calling updateUserResponse with surveyId={} for targetUserId={}, bodyDto={}, ifMatch={}", surveyId, targetUserId, bodyDto, ifMatch);
         int version = EtagUtils.parseIfMatchToVersion(ifMatch);
@@ -312,7 +312,7 @@ public class SurveyController {
     public ResponseEntity<Void> deleteUserResponse(
             @PathVariable String surveyId,
             @PathVariable String targetUserId,
-            @RequestHeader(name = HttpHeaders.IF_MATCH, required = false) String ifMatch) {
+            @RequestHeader(name = HttpHeaders.IF_MATCH, required = true) String ifMatch) {
         logger.info("Calling deleteUserResponse with surveyId={} for targetUserId={}, ifMatch={}", surveyId, targetUserId, ifMatch);
         int version = EtagUtils.parseIfMatchToVersion(ifMatch);
         surveyResponseService.deleteUserResponse(surveyId, targetUserId, version);

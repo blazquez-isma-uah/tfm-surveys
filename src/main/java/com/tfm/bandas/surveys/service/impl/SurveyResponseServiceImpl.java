@@ -44,7 +44,7 @@ public class SurveyResponseServiceImpl implements SurveyResponseService {
         validateInstrumentRequirement(survey, answer.answer(), answer.instrumentId());
 
         surveyResponseRepository.findBySurveyIdAndUserIamId(surveyId, userId)
-                .ifPresent(r -> { throw new PreconditionFailedException("Response already exists for user"); });
+                .ifPresent(r -> { throw new IllegalStateException("Response already exists for user"); });
 
         SurveyResponseEntity response = new SurveyResponseEntity();
         response.setSurveyId(surveyId);
