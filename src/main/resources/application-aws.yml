@@ -1,0 +1,42 @@
+# Perfil activo cuando SPRING_PROFILES_ACTIVE=aws (Lambda en producción)
+spring:
+  datasource:
+    # URL completa proporcionada por SSM Parameter Store via variable de entorno Lambda
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # JWKS de Cognito
+          jwk-set-uri: ${COGNITO_JWKS_URI}
+  cloud:
+    openfeign:
+      client:
+        config:
+          eventsClient:
+            # Timeouts aumentados respecto a Docker: la comunicación Lambda→API Gateway→Lambda
+            # tiene más latencia que Docker intra-red, especialmente en cold starts
+            connect-timeout: 5000
+            read-timeout: 5000
+            logger-level: basic
+
+# URL base de MS Events en AWS: URL de API Gateway y rutas específicas para cada operación
+# El valor se inyecta como variable de entorno Lambda desde CDK
+events:
+  service:
+    uri: ${EVENTS_SERVICE_URI}
+    exists-path: ${EVENTS_SERVICE_EXISTS_PATH}
