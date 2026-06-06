@@ -1,5 +1,12 @@
 # Perfil activo cuando SPRING_PROFILES_ACTIVE=aws (Lambda en producción)
 spring:
+  main:
+    # Fuerza el modo Servlet en Lambda.
+    # aws-serverless-java-container arranca Spring en modo reactivo cuando
+    # detecta spring-boot-starter-webflux en el classpath. SecurityConfig
+    # usa HttpSecurity que solo existe en el contexto Servlet, no en el reactivo.
+    # Esta propiedad fuerza el modo correcto independientemente del classpath.
+    web-application-type: servlet
   datasource:
     # URL completa proporcionada por SSM Parameter Store via variable de entorno Lambda
     url: ${DB_URL}
@@ -21,18 +28,25 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          # JWKS de Cognito
+          # JWKS de Cognito para validar la firma del token
           jwk-set-uri: ${COGNITO_JWKS_URI}
+          # Issuer de Cognito para validar el claim "iss" del token
+          issuer-uri: ${COGNITO_ISSUER_URI}
   cloud:
     openfeign:
       client:
         config:
-          eventsClient:
+          default:
             # Timeouts aumentados respecto a Docker: la comunicación Lambda→API Gateway→Lambda
             # tiene más latencia que Docker intra-red, especialmente en cold starts
-            connect-timeout: 5000
-            read-timeout: 5000
-            logger-level: basic
+            connectTimeout: 5000
+            # Debe ser mayor que el cold start máximo de MS Events con SnapStart
+            # (~4s típico, hasta ~10s en el peor caso).
+            # Con 25s hay margen holgado y es menor que el timeout de Lambda (45s),
+            # garantizando que Feign falle con error controlado antes de que
+            # AWS termine la Lambda.
+            readTimeout: 25000
+            loggerLevel: BASIC
 
 # URL base de MS Events en AWS: URL de API Gateway y rutas específicas para cada operación
 # El valor se inyecta como variable de entorno Lambda desde CDK

@@ -9,8 +9,8 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.web.cors.CorsConfigurationSource;
-import static com.tfm.bandas.surveys.utils.Constants.*;
 
 @Configuration
 @EnableMethodSecurity
@@ -30,6 +30,7 @@ public class SecurityConfig {
   SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
     var conv = new JwtAuthenticationConverter();
     conv.setJwtGrantedAuthoritiesConverter(jwtAuthConverter);
+    var matcher = PathPatternRequestMatcher.withDefaults();
 
     http.csrf(AbstractHttpConfigurer::disable);
 
@@ -40,14 +41,21 @@ public class SecurityConfig {
     }
 
     http.authorizeHttpRequests(auth -> auth
-                    .requestMatchers(PATTERNS_PERMITED).permitAll()
-                    .requestMatchers(HttpMethod.GET, PATTERNS_SURVEYS).hasAnyRole("ADMIN", "MUSICIAN")
-                    .requestMatchers(HttpMethod.POST, PATTERNS_RESPONSES).hasAnyRole("ADMIN", "MUSICIAN")
-                    .requestMatchers(HttpMethod.PUT, PATTERNS_RESPONSES).hasAnyRole("ADMIN", "MUSICIAN")
-                    .requestMatchers(HttpMethod.DELETE, PATTERNS_RESPONSES).hasAnyRole("ADMIN", "MUSICIAN")
-                    .requestMatchers(HttpMethod.POST, PATTERNS_SURVEYS).hasRole("ADMIN")
-                    .requestMatchers(HttpMethod.PUT, PATTERNS_SURVEYS).hasRole("ADMIN")
-                    .requestMatchers(HttpMethod.DELETE, PATTERNS_SURVEYS).hasRole("ADMIN")
+                    // Endpoints públicos
+                    .requestMatchers(matcher.matcher("/actuator/health")).permitAll()
+                    .requestMatchers(matcher.matcher("/swagger-ui.html")).permitAll()
+                    .requestMatchers(matcher.matcher("/swagger-ui/**")).permitAll()
+                    .requestMatchers(matcher.matcher("/v3/api-docs/**")).permitAll()
+                    // Respuestas: GET, POST, PUT, DELETE accesibles por ADMIN y MUSICIAN
+                    .requestMatchers(matcher.matcher(HttpMethod.GET, "/api/surveys/responses/**")).hasAnyRole("ADMIN", "MUSICIAN")
+                    .requestMatchers(matcher.matcher(HttpMethod.POST, "/api/surveys/responses/**")).hasAnyRole("ADMIN", "MUSICIAN")
+                    .requestMatchers(matcher.matcher(HttpMethod.PUT, "/api/surveys/responses/**")).hasAnyRole("ADMIN", "MUSICIAN")
+                    .requestMatchers(matcher.matcher(HttpMethod.DELETE, "/api/surveys/responses/**")).hasAnyRole("ADMIN", "MUSICIAN")
+                    // Encuestas: GET accesible por ADMIN y MUSICIAN, resto solo ADMIN
+                    .requestMatchers(matcher.matcher(HttpMethod.GET, "/api/surveys/**")).hasAnyRole("ADMIN", "MUSICIAN")
+                    .requestMatchers(matcher.matcher(HttpMethod.POST, "/api/surveys/**")).hasRole("ADMIN")
+                    .requestMatchers(matcher.matcher(HttpMethod.PUT, "/api/surveys/**")).hasRole("ADMIN")
+                    .requestMatchers(matcher.matcher(HttpMethod.DELETE, "/api/surveys/**")).hasRole("ADMIN")
                     .anyRequest().authenticated()
             )
             .oauth2ResourceServer(oauth -> oauth.jwt(jwt -> jwt.jwtAuthenticationConverter(conv)));
