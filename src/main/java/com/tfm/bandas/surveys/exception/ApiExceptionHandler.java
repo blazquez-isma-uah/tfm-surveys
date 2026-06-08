@@ -74,9 +74,14 @@ public class ApiExceptionHandler {
   }
 
   @ExceptionHandler(FeignException.class)
-  public ResponseEntity<Map<String, Object>> handleWebClient(FeignException ex) {
-    HttpStatus status = HttpStatus.valueOf(ex.status());
-    String msg = ex.contentUTF8();
+  public ResponseEntity<Map<String, Object>> handleFeign(FeignException ex) {
+    HttpStatus status;
+    try {
+      status = HttpStatus.valueOf(ex.status());
+    } catch (Exception e) {
+      status = HttpStatus.BAD_GATEWAY;
+    }
+    String msg = ex.getMessage();
     return ResponseEntity.status(status)
             .body(Map.of("error", "Upstream Error", "status", status.value(), "message", msg));
   }

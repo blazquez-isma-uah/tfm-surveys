@@ -14,6 +14,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 public interface EventsFeignClient {
 
     @GetMapping("${events.service.exists-path}")
-    ResponseEntity<Void> getEvent(@PathVariable("eventId") String eventId);
+    void getEvent(@PathVariable("eventId") String eventId);
 
 }

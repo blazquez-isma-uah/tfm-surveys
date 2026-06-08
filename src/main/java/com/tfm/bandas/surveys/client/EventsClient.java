@@ -13,20 +13,17 @@ public class EventsClient {
 
     /**
      * Verifica si un evento existe en el servicio de eventos por su ID.
-     * Si el cliente Feign devuelve 2xx, el evento existe.
-     * Si devuelve excepción NotFound (404), el evento no existe.
+     * Si Feign no lanza excepción, el evento existe (2xx).
+     * Si lanza FeignException. NotFound (404), el evento no existe.
      * Otros errores de Feign se propagan hacia arriba.
-     * @param eventId
-     * @return
      */
     public boolean existsEventById(String eventId) {
-       try {
-           ResponseEntity<Void> response = feign.getEvent(eventId);
-           // Si la respuesta es 2xx, el evento existe
-           return response.getStatusCode().is2xxSuccessful();
-       } catch (FeignException.NotFound e) {
-           return false; // Event no encontrado, luego no existe
-       }
-       // Otros errores de Feign se propagan hacia arriba
+        try {
+            feign.getEvent(eventId);
+            return true;
+        } catch (FeignException.NotFound e) {
+            return false;
+        }
+        // Otros errores se propagan — el servicio de surveys los manejará
     }
 }
