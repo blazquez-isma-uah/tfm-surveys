@@ -44,7 +44,7 @@ public class SurveyResponseServiceImpl implements SurveyResponseService {
         validateInstrumentRequirement(survey, answer.answer(), answer.instrumentId());
 
         surveyResponseRepository.findBySurveyIdAndUserIamId(surveyId, userId)
-                .ifPresent(r -> { throw new IllegalStateException("Response already exists for user"); });
+                .ifPresent(r -> { throw new IllegalStateException("Ya existe una respuesta registrada para este usuario en esta encuesta."); });
 
         SurveyResponseEntity response = new SurveyResponseEntity();
         response.setSurveyId(surveyId);
@@ -62,7 +62,7 @@ public class SurveyResponseServiceImpl implements SurveyResponseService {
         SurveyEntity survey = getSurvey(surveyId);
         if (survey.getResponseType() != ResponseType.YES_NO_MAYBE
             && survey.getResponseType() != ResponseType.YES_NO_MAYBE_WITH_INSTRUMENT) {
-            throw new IllegalStateException("Survey response type is not YES_NO_MAYBE or YES_NO_MAYBE_WITH_INSTRUMENT");
+            throw new IllegalStateException("Esta encuesta no admite respuestas de tipo Sí/No/Tal vez.");
         }
         Map<YesNoMaybeAnswer, Long> answers = new EnumMap<>(YesNoMaybeAnswer.class);
         for (YesNoMaybeAnswer y : YesNoMaybeAnswer.values()) {
@@ -85,7 +85,7 @@ public class SurveyResponseServiceImpl implements SurveyResponseService {
         getSurvey(surveyId);
         return surveyResponseRepository.findBySurveyIdAndUserIamId(surveyId, userId)
                 .map(SurveyResponseMapper::toDto)
-                .orElseThrow(() -> new NoSuchElementException("Response not found for user"));
+                .orElseThrow(() -> new NoSuchElementException("No se encontró ninguna respuesta del usuario " + userId + " para la encuesta " + surveyId + "."));
     }
 
     @Override
@@ -97,7 +97,7 @@ public class SurveyResponseServiceImpl implements SurveyResponseService {
         validateInstrumentRequirement(survey, dto.answer(), dto.instrumentId());
 
         SurveyResponseEntity response = surveyResponseRepository.findBySurveyIdAndUserIamId(surveyId, userId)
-                .orElseThrow(() -> new NoSuchElementException("Response not found for user"));
+                .orElseThrow(() -> new NoSuchElementException("No se encontró ninguna respuesta del usuario " + userId + " para la encuesta " + surveyId + "."));
 
         compareVersion(ifMatchVersion, response.getVersion());
         response.setAnswerYesNoMaybe(dto.answer());
@@ -114,7 +114,7 @@ public class SurveyResponseServiceImpl implements SurveyResponseService {
         ensureRespondable(survey);
 
         SurveyResponseEntity response = surveyResponseRepository.findBySurveyIdAndUserIamId(surveyId, userId)
-                .orElseThrow(() -> new NoSuchElementException("Response not found for user"));
+                .orElseThrow(() -> new NoSuchElementException("No se encontró ninguna respuesta del usuario " + userId + " para la encuesta " + surveyId + "."));
 
         compareVersion(ifMatchVersion, response.getVersion());
         surveyResponseRepository.delete(response);
@@ -132,7 +132,7 @@ public class SurveyResponseServiceImpl implements SurveyResponseService {
     }
 
     private SurveyEntity getSurvey(String surveyId) {
-        return surveyRepository.findById(surveyId).orElseThrow(() -> new NoSuchElementException("Survey not found: " + surveyId));
+        return surveyRepository.findById(surveyId).orElseThrow(() -> new NoSuchElementException("No se encontró ninguna encuesta con el ID " + surveyId + "."));
     }
 
     // ---- helpers ----
@@ -142,16 +142,16 @@ public class SurveyResponseServiceImpl implements SurveyResponseService {
         if (survey.getResponseType() == ResponseType.YES_NO_MAYBE_WITH_INSTRUMENT) {
             if ((answer == YesNoMaybeAnswer.YES || answer == YesNoMaybeAnswer.MAYBE)
                 && (instrumentId == null || instrumentId.isBlank())) {
-                throw new IllegalArgumentException("Instrument is required when answering YES or MAYBE for this survey");
+                throw new IllegalArgumentException("Debes indicar un instrumento al responder SÍ o TAL VEZ en esta encuesta.");
             }
         }
     }
 
     private void ensureRespondable(SurveyEntity survey) {
         Instant now = Instant.now();
-        if (survey.getStatus() != SurveyStatus.OPEN) throw new IllegalStateException("Survey not open");
-        if (survey.getOpensAt() != null && now.isBefore(survey.getOpensAt())) throw new IllegalStateException("Before opensAt");
-        if (survey.getClosesAt() != null && now.isAfter(survey.getClosesAt())) throw new IllegalStateException("After closesAt");
+        if (survey.getStatus() != SurveyStatus.OPEN) throw new IllegalStateException("No se puede responder: la encuesta no está abierta actualmente.");
+        if (survey.getOpensAt() != null && now.isBefore(survey.getOpensAt())) throw new IllegalStateException("No se puede responder: la encuesta aún no ha comenzado.");
+        if (survey.getClosesAt() != null && now.isAfter(survey.getClosesAt())) throw new IllegalStateException("No se puede responder: el plazo de esta encuesta ya ha finalizado.");
     }
 
 }

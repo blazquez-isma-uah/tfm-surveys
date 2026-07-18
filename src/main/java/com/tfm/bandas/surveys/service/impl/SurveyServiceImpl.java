@@ -35,22 +35,18 @@ public class SurveyServiceImpl implements SurveyService {
     public SurveyDTO createSurvey(CreateSurveyRequestDTO survey, String userCreatorId) {
         // Validar fechas
         if (survey.opensAt() != null && survey.closesAt() != null && survey.opensAt().isAfter(survey.closesAt())) {
-            throw new IllegalArgumentException("opensAt must be <= closesAt");
+            throw new IllegalArgumentException("La fecha de apertura debe ser anterior o igual a la fecha de cierre.");
         }
 
         // Validar que el eventId existe llamando al cliente de eventos
-        if (!eventsClient.existsEventById(survey.eventId())) {
-            throw new IllegalArgumentException("eventId not found: " + survey.eventId());
-        }
+        eventsClient.validateEventExists(survey.eventId());
 
         SurveyEntity entity = SurveyMapper.toEntity(survey);
 
         // Validar unicidad: solo puede haber una encuesta de tipo ATTENDANCE por evento
         SurveyType surveyType = entity.getSurveyType();
         if (surveyType == SurveyType.ATTENDANCE) {
-            if (surveyRepository.existsByEventIdAndSurveyType(survey.eventId(), SurveyType.ATTENDANCE)) {
-                throw new IllegalArgumentException("An ATTENDANCE survey already exists for event: " + survey.eventId());
-            }
+            verifyAttendanceSurvey(survey.eventId());
         }
 
         entity.setCreatedBy(userCreatorId);
@@ -60,17 +56,19 @@ public class SurveyServiceImpl implements SurveyService {
     @Override
     @Transactional(readOnly = true)
     public SurveyDTO getSurveyById(String surveyId) {
-        SurveyEntity survey = surveyRepository.findById(surveyId).orElseThrow();
+        SurveyEntity survey = surveyRepository.findById(surveyId)
+                .orElseThrow(() -> new java.util.NoSuchElementException("No se encontró ninguna encuesta con el ID " + surveyId + "."));
         return SurveyMapper.toDto(survey);
     }
 
     @Override
     @Transactional
     public void deleteSurvey(String surveyId, int ifMatchVersion) {
-        SurveyEntity survey = surveyRepository.findById(surveyId).orElseThrow();
+        SurveyEntity survey = surveyRepository.findById(surveyId)
+                .orElseThrow(() -> new java.util.NoSuchElementException("No se encontró ninguna encuesta con el ID " + surveyId + "."));
         compareVersion(ifMatchVersion, survey.getVersion());
         if (survey.getStatus() == SurveyStatus.OPEN)
-            throw new IllegalStateException("Cannot delete an OPEN survey");
+            throw new IllegalStateException("No se puede eliminar una encuesta que está actualmente abierta (OPEN).");
         surveyRepository.delete(survey);
     }
 
@@ -79,7 +77,7 @@ public class SurveyServiceImpl implements SurveyService {
         survey.validateWindow();
 
         SurveyEntity surveyEntity = surveyRepository.findById(surveyId)
-                .orElseThrow(() -> new java.util.NoSuchElementException("Survey not found: " + surveyId));
+                .orElseThrow(() -> new java.util.NoSuchElementException("No se encontró ninguna encuesta con el ID " + surveyId + "."));
 
         compareVersion(ifMatchVersion, surveyEntity.getVersion());
 
@@ -90,32 +88,37 @@ public class SurveyServiceImpl implements SurveyService {
 
         if (newType == SurveyType.ATTENDANCE && currentType != SurveyType.ATTENDANCE) {
             // Se está intentando cambiar a ATTENDANCE, verificar que no exista otra
-            if (surveyRepository.existsByEventIdAndSurveyType(surveyEntity.getEventId(), SurveyType.ATTENDANCE)) {
-                throw new IllegalArgumentException("An ATTENDANCE survey already exists for event: " + surveyEntity.getEventId());
-            }
+            verifyAttendanceSurvey(surveyEntity.getEventId());
         }
 
         // Reglas por estado
         switch (surveyEntity.getStatus()) {
             case DRAFT -> applyPutDraft(surveyEntity, survey);
             case OPEN  -> applyPutOpen(surveyEntity, survey);
-            default    -> throw new IllegalStateException("Survey in " + surveyEntity.getStatus() + " cannot be modified");
+            default    -> throw new IllegalStateException("La encuesta está en estado " + surveyEntity.getStatus() + " y no puede modificarse.");
         }
 
         // Validación final de ventana
         Instant o = surveyEntity.getOpensAt(), c = surveyEntity.getClosesAt();
         if (o != null && c != null && o.isAfter(c)) {
-            throw new IllegalArgumentException("opensAt must be <= closesAt");
+            throw new IllegalArgumentException("La fecha de apertura debe ser anterior o igual a la fecha de cierre.");
         }
 
         SurveyEntity saved = surveyRepository.saveAndFlush(surveyEntity);
         return SurveyMapper.toDto(saved);
     }
 
+    private void verifyAttendanceSurvey(String eventId) {
+        if (surveyRepository.existsByEventIdAndSurveyType(eventId, SurveyType.ATTENDANCE)) {
+            throw new IllegalStateException("Ya existe una encuesta de tipo Asistencia para el evento con el ID " + eventId + ".");
+        }
+    }
+
     @Override
     @Transactional
     public SurveyDTO openSurvey(String surveyId, int ifMatchVersion) {
-        SurveyEntity survey = surveyRepository.findById(surveyId).orElseThrow();
+        SurveyEntity survey = surveyRepository.findById(surveyId)
+                .orElseThrow(() -> new java.util.NoSuchElementException("No se encontró ninguna encuesta con el ID " + surveyId + "."));
         compareVersion(ifMatchVersion, survey.getVersion());
         // Si ya está abierto, no hacer nada, para otros estados, abrirlo
         if (survey.getStatus() == SurveyStatus.OPEN) return SurveyMapper.toDto(survey);
@@ -126,7 +129,8 @@ public class SurveyServiceImpl implements SurveyService {
     @Override
     @Transactional
     public SurveyDTO closeSurvey(String surveyId, int ifMatchVersion) {
-        SurveyEntity survey = surveyRepository.findById(surveyId).orElseThrow();
+        SurveyEntity survey = surveyRepository.findById(surveyId)
+                .orElseThrow(() -> new java.util.NoSuchElementException("No se encontró ninguna encuesta con el ID " + surveyId + "."));
         compareVersion(ifMatchVersion, survey.getVersion());
 
         if (survey.getStatus() == SurveyStatus.CLOSED || survey.getStatus() == SurveyStatus.CANCELLED) return SurveyMapper.toDto(survey);
@@ -137,7 +141,8 @@ public class SurveyServiceImpl implements SurveyService {
     @Override
     @Transactional
     public SurveyDTO cancelSurvey(String surveyId, int ifMatchVersion) {
-        SurveyEntity survey = surveyRepository.findById(surveyId).orElseThrow();
+        SurveyEntity survey = surveyRepository.findById(surveyId)
+                .orElseThrow(() -> new java.util.NoSuchElementException("No se encontró ninguna encuesta con el ID " + surveyId + "."));
 
         compareVersion(ifMatchVersion, survey.getVersion());
         if (survey.getStatus() == SurveyStatus.CANCELLED) return SurveyMapper.toDto(survey);
@@ -148,12 +153,13 @@ public class SurveyServiceImpl implements SurveyService {
     @Override
     @Transactional
     public SurveyDTO resetSurvey(String surveyId, int ifMatchVersion) {
-        SurveyEntity survey = surveyRepository.findById(surveyId).orElseThrow();
+        SurveyEntity survey = surveyRepository.findById(surveyId)
+                .orElseThrow(() -> new java.util.NoSuchElementException("No se encontró ninguna encuesta con el ID " + surveyId + "."));
         compareVersion(ifMatchVersion, survey.getVersion());
 
         // Sólo permitir reset si la encuesta está en CLOSED o CANCELLED
         if (survey.getStatus() != SurveyStatus.CLOSED && survey.getStatus() != SurveyStatus.CANCELLED) {
-            throw new IllegalStateException("Only CLOSED or CANCELLED surveys can be reset");
+            throw new IllegalStateException("Solo se pueden reiniciar encuestas que estén en estado CLOSED (cerrada) o CANCELLED (cancelada).");
         }
 
         // Borrar todas las respuestas asociadas a esta encuesta
@@ -267,12 +273,12 @@ public class SurveyServiceImpl implements SurveyService {
 
         // opensAt no se puede modificar en OPEN
         if (!dto.opensAt().equals(e.getOpensAt())) {
-            throw new IllegalArgumentException("Cannot modify opensAt while survey is OPEN");
+            throw new IllegalArgumentException("No se puede modificar la fecha de apertura mientras la encuesta está abierta (OPEN).");
         }
 
         // closesAt obligatorio y solo se puede mantener o AMPLIAR
         if (dto.closesAt().isBefore(e.getClosesAt())) {
-            throw new IllegalArgumentException("Cannot shorten closesAt while survey is OPEN");
+            throw new IllegalArgumentException("No se puede acortar la fecha de cierre mientras la encuesta está abierta (OPEN); solo se puede mantener o ampliar.");
         }
         e.setClosesAt(dto.closesAt());
     }
