@@ -46,9 +46,7 @@ public class SurveyServiceImpl implements SurveyService {
         // Validar unicidad: solo puede haber una encuesta de tipo ATTENDANCE por evento
         SurveyType surveyType = entity.getSurveyType();
         if (surveyType == SurveyType.ATTENDANCE) {
-            if (surveyRepository.existsByEventIdAndSurveyType(survey.eventId(), SurveyType.ATTENDANCE)) {
-                throw new IllegalStateException("Ya existe una encuesta de tipo ATTENDANCE para el evento " + survey.eventId() + ".");
-            }
+            verifyAttendanceSurvey(survey.eventId());
         }
 
         entity.setCreatedBy(userCreatorId);
@@ -90,9 +88,7 @@ public class SurveyServiceImpl implements SurveyService {
 
         if (newType == SurveyType.ATTENDANCE && currentType != SurveyType.ATTENDANCE) {
             // Se está intentando cambiar a ATTENDANCE, verificar que no exista otra
-            if (surveyRepository.existsByEventIdAndSurveyType(surveyEntity.getEventId(), SurveyType.ATTENDANCE)) {
-                throw new IllegalStateException("Ya existe una encuesta de tipo ATTENDANCE para el evento " + surveyEntity.getEventId() + ".");
-            }
+            verifyAttendanceSurvey(surveyEntity.getEventId());
         }
 
         // Reglas por estado
@@ -110,6 +106,12 @@ public class SurveyServiceImpl implements SurveyService {
 
         SurveyEntity saved = surveyRepository.saveAndFlush(surveyEntity);
         return SurveyMapper.toDto(saved);
+    }
+
+    private void verifyAttendanceSurvey(String eventId) {
+        if (surveyRepository.existsByEventIdAndSurveyType(eventId, SurveyType.ATTENDANCE)) {
+            throw new IllegalStateException("Ya existe una encuesta de tipo Asistencia para el evento con el ID " + eventId + ".");
+        }
     }
 
     @Override
