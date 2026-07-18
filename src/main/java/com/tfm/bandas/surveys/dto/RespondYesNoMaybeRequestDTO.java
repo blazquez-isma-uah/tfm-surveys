@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Size;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public record RespondYesNoMaybeRequestDTO(
-  @NotNull @JsonProperty("answer") YesNoMaybeAnswer answer,
+  @NotNull(message = "La respuesta es obligatoria.") @JsonProperty("answer") YesNoMaybeAnswer answer,
   @JsonProperty("instrumentId") String instrumentId, // Obligatorio solo si la encuesta es YES_NO_MAYBE_WITH_INSTRUMENT y answer es YES o MAYBE
-  @Size(max=1000) @JsonProperty("comment") String comment
+  @Size(max=1000, message = "El comentario no puede superar los 1000 caracteres.") @JsonProperty("comment") String comment
 ) {}
