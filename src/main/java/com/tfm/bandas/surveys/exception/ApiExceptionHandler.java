@@ -14,6 +14,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -131,6 +132,12 @@ public class ApiExceptionHandler {
   @ResponseStatus(HttpStatus.PRECONDITION_REQUIRED) // 428
   public Map<String, Object> handlePreconditionRequired(RuntimeException ex) {
     return errorBody("Precondición Requerida", ex.getMessage());
+  }
+
+  @ExceptionHandler(MissingRequestHeaderException.class)
+  @ResponseStatus(HttpStatus.PRECONDITION_REQUIRED) // 428
+  public Map<String, Object> handleMissingHeader(MissingRequestHeaderException ex) {
+    return errorBody("Precondición Requerida", "La cabecera If-Match es obligatoria.");
   }
 
   @ExceptionHandler(PreconditionFailedException.class)
